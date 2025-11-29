@@ -62,3 +62,26 @@ class TestPDFRedactor:
         detections2 = redactor.detect_sensitive_data(text2)
 
         assert detections1[0][2] == detections2[0][2]
+
+    def test_save_mappings_json_encoding(self, tmp_path):
+        """Test mapping file saves correctly with special characters."""
+        import json
+
+        redactor = PDFRedactor()
+        # Add mappings with special characters (currency symbols)
+        redactor.mappings = {
+            "£45,000.00": {"type": "monetary_amount", "placeholder": "Amount_A"},
+            "€12,500.00": {"type": "monetary_amount", "placeholder": "Amount_B"},
+            "Company™ Ltd": {"type": "company_name", "placeholder": "Company_A"},
+        }
+
+        output_file = tmp_path / "test_mappings.json"
+        redactor.save_mappings(str(output_file))
+
+        # Verify file was written and can be loaded
+        with open(output_file, encoding="utf-8") as f:
+            loaded = json.load(f)
+
+        assert loaded == redactor.mappings
+        assert "£45,000.00" in loaded
+        assert "€12,500.00" in loaded
