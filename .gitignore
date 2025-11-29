@@ -6,3 +6,20 @@ notebooks/cifar_net.pth
 .venv/
 venv/
 env/
+
+# macOS
+.DS_Store
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Test artifacts
+test_*.pdf
+test_*.json
