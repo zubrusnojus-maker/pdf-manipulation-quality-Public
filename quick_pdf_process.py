@@ -25,12 +25,12 @@ MAX_INPUT_LENGTH = 1024
 def quick_process(pdf_path):
     """Quick PDF processing in one script."""
     print(f"Processing: {pdf_path}")
-    
+
     # 1. Load PDF & rasterise
     print("Loading and rasterizing PDF...")
     document = fitz.open(pdf_path)
     images = pdf2image.convert_from_path(pdf_path, dpi=300)
-    
+
     # 2. OCR (High-quality)
     print("Performing high-quality OCR (TrOCR Large)...")
     ocr_pipeline = pipeline(
@@ -103,13 +103,13 @@ def quick_process(pdf_path):
             fontsize=12,
             color=(0, 0, 0)
         )
-    
+
     # 5. Save
     output_path = str(Path(pdf_path).parent / f"edited_{Path(pdf_path).name}")
     print(f"Saving to: {output_path}")
     document.save(output_path)
     document.close()
-    
+
     print(f"✓ Done! Output saved to: {output_path}")
     return output_path
 
@@ -118,11 +118,11 @@ if __name__ == "__main__":
     if len(sys.argv) < MIN_ARGS_REQUIRED:
         print("Usage: python quick_pdf_process.py <input.pdf>")
         sys.exit(1)
-    
+
     pdf_file = sys.argv[1]
-    
+
     if not Path(pdf_file).exists():
         print(f"Error: File '{pdf_file}' not found")
         sys.exit(1)
-    
+
     quick_process(pdf_file)
