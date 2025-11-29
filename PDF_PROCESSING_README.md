@@ -25,7 +25,7 @@ Install the required packages:
 
 ```bash
 pip install -r requirements-pdf.txt
-```
+```text
 
 Or manually:
 
@@ -39,7 +39,7 @@ pip install torch>=2.2.0 \
           tqdm \
           sentencepiece \
           protobuf
-```
+```text
 
 **GPU Recommended**: These quality models require ~16GB VRAM for large model, ~8GB for small model.
 
@@ -51,7 +51,7 @@ Process a PDF with a single command:
 
 ```bash
 python quick_pdf_process.py mydoc.pdf
-```
+```text
 
 This will create `edited_mydoc.pdf` with summarized content.
 
@@ -80,7 +80,7 @@ python pdf_processor.py input.pdf --optimize
 
 # Custom DPI for rasterization
 python pdf_processor.py input.pdf --dpi 600
-```
+```text
 
 ## Usage Examples
 
@@ -98,7 +98,7 @@ processor.process_pdf(
     output_path="summarized.pdf",
     operation="summarize"
 )
-```
+```text
 
 ### Example 2: High-Quality Text Rewriting (Llama-2-13B)
 
@@ -115,7 +115,7 @@ processor.process_pdf(
     operation="rewrite",
     dpi=600
 )
-```
+```text
 
 ### Example 3: Manual Step-by-Step Processing (Quality Models)
 
@@ -164,7 +164,7 @@ for i, summary in enumerate(summaries):
     )
 
 doc.save("output.pdf")
-```
+```text
 
 ### Example 4: Post-Processing with pikepdf
 
@@ -173,7 +173,7 @@ from pdf_processor import post_process_with_pikepdf
 
 # Optimize an existing PDF
 post_process_with_pikepdf("edited.pdf", "optimized.pdf")
-```
+```text
 
 ## Architecture
 
@@ -190,12 +190,14 @@ post_process_with_pikepdf("edited.pdf", "optimized.pdf")
 ### Models Used (Quality-Optimized November 2025)
 
 #### OCR (Optical Character Recognition)
+
 - **microsoft/trocr-large-printed** - Best-in-class transformer OCR
   - 3-5% better accuracy than base model
   - Handles complex fonts and layouts
   - ~16% slower but worth it for quality
 
 #### Text Manipulation
+
 - **Small (default)**: `mistralai/Mistral-7B-Instruct-v0.2`
   - Instruction-following model with excellent quality
   - ~7B parameters, runs on 8GB VRAM
@@ -208,6 +210,7 @@ post_process_with_pikepdf("edited.pdf", "optimized.pdf")
   - 4× fewer hallucinations than older models
 
 #### Layout Analysis (Optional)
+
 - **microsoft/layoutlmv3-base** - Document layout understanding
   - Detects tables, headers, sections
   - 12% better table detection than v2
@@ -215,7 +218,7 @@ post_process_with_pikepdf("edited.pdf", "optimized.pdf")
 
 ## Command Line Options
 
-```
+```text
 usage: pdf_processor.py [-h] [-o OUTPUT] [-m {small,large}]
                        [--operation {summarize,rewrite}] [--dpi DPI]
                        [--use-layout] [--optimize]
@@ -235,7 +238,7 @@ optional arguments:
   --dpi DPI             DPI for PDF rasterization
   --use-layout          Enable layout analysis (slower)
   --optimize            Post-process with pikepdf optimization
-```
+```text
 
 ## Why This Approach?
 
@@ -303,7 +306,7 @@ page.insert_textbox(
     fontsize=12,
     align=1  # 0=left, 1=center, 2=right
 )
-```
+```text
 
 ### Custom Models
 
@@ -315,7 +318,7 @@ self.ocr_pipe = pipeline("image-to-text", model="your-custom-ocr-model")
 
 # Use a different summarization model
 self.summariser = pipeline("summarization", model="your-custom-model")
-```
+```text
 
 ## License
 

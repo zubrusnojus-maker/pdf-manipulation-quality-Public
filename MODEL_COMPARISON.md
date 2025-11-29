@@ -78,11 +78,11 @@ For **quality-focused** PDF text manipulation, use:
 
 ### GPU Memory Usage (FP16)
 
-```
+```text
 Llama-2-13B-chat:   ~16GB VRAM (A100, RTX 4090, A6000)
 Mistral-7B-Instruct: ~8GB VRAM (RTX 3090, RTX 4070 Ti, A5000)
 BART-Large:          ~3GB VRAM (RTX 2060, GTX 1080 Ti)
-```
+```text
 
 ### CPU-Only Performance
 
@@ -109,7 +109,7 @@ pipeline(
     top_p=0.9,
     max_new_tokens=512
 )
-```
+```text
 
 ### For Production (Speed + Quality)
 
@@ -123,7 +123,7 @@ pipeline(
     temperature=0.7,
     max_new_tokens=256
 )
-```
+```text
 
 ## Layout Analysis Models
 

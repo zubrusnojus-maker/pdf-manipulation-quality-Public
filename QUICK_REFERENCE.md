@@ -7,11 +7,12 @@
 ```bash
 # Use Llama-2-13B (requires 16GB VRAM)
 python pdf_processor.py document.pdf --model-size large --use-layout
-```
+```text
 
 **Best for:** Legal documents, medical records, research papers
 
 **Models:**
+
 - OCR: `microsoft/trocr-large-printed` (97%+ accuracy)
 - Text: `meta-llama/Llama-2-13b-chat-hf` (4× fewer errors)
 - Layout: `microsoft/layoutlmv3-base`
@@ -23,11 +24,12 @@ python pdf_processor.py document.pdf --model-size large --use-layout
 ```bash
 # Use Mistral-7B (requires 8GB VRAM)
 python pdf_processor.py document.pdf
-```
+```text
 
 **Best for:** Business documents, articles, general processing
 
 **Models:**
+
 - OCR: `microsoft/trocr-large-printed`
 - Text: `mistralai/Mistral-7B-Instruct-v0.2`
 - Layout: `microsoft/layoutlmv3-base` (if --use-layout)
@@ -39,7 +41,7 @@ python pdf_processor.py document.pdf
 ```bash
 # Use smaller models (requires 3GB VRAM)
 python quick_pdf_process.py document.pdf
-```
+```text
 
 **Best for:** High-volume processing, quick previews
 
@@ -76,25 +78,28 @@ python pdf_processor.py input.pdf --dpi 600
 python demo_quality.py input.pdf --quality high
 python demo_quality.py input.pdf --quality balanced
 python demo_quality.py input.pdf --quality fast
-```
+```text
 
 ---
 
 ## 💡 When to Use Each Quality Level
 
-### Use **HIGH** quality when:
+### Use **HIGH** quality when
+
 - ✅ Accuracy is critical (legal, medical, financial)
 - ✅ Document will be used for important decisions
 - ✅ Technical terminology must be preserved
 - ✅ You have 16GB+ VRAM available
 
-### Use **BALANCED** quality when:
+### Use **BALANCED** quality when
+
 - ✅ General business documents
 - ✅ Need good quality but not critical
 - ✅ Have 8GB VRAM (most modern GPUs)
 - ✅ Want reasonable speed (RECOMMENDED)
 
-### Use **FAST** quality when:
+### Use **FAST** quality when
+
 - ✅ Processing hundreds/thousands of documents
 - ✅ Need quick previews or drafts
 - ✅ Limited GPU resources (3-4GB)
@@ -113,6 +118,7 @@ python demo_quality.py input.pdf --quality fast
 | Fast | 3GB | RTX 2060, GTX 1080 Ti | ~25 pages/min |
 
 ### CPU-Only Performance
+
 - ❌ **High**: Too slow (~0.3 tok/s)
 - ⚠️ **Balanced**: Marginal (~0.6 tok/s)
 - ✅ **Fast**: Usable (~2 tok/s)
@@ -133,7 +139,7 @@ processor.process_pdf("input.pdf", "output.pdf")
 # Balanced (recommended)
 processor = PDFProcessor(model_size="small", use_layout=False)
 processor.process_pdf("input.pdf", "output.pdf")
-```
+```text
 
 ### Manual Control (Advanced)
 
@@ -155,7 +161,7 @@ llm = pipeline(
     device_map="auto",
     torch_dtype=torch.float16
 )
-```
+```text
 
 ---
 
