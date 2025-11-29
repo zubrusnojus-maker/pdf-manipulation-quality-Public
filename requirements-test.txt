@@ -1,0 +1,22 @@
+# Test dependencies for PDF Processing Toolkit
+# Install with: pip install -r requirements-test.txt
+
+# Testing framework
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+pytest-timeout>=2.2.0
+pytest-xdist>=3.5.0  # Parallel test execution
+
+# Code quality
+ruff>=0.1.0
+mypy>=1.7.0
+bandit>=1.7.0  # Security scanning
+
+# Type stubs for libraries
+types-tqdm>=4.66.0
+pandas-stubs>=2.0.0
+
+# Test utilities
+hypothesis>=6.90.0  # Property-based testing
+freezegun>=1.2.0  # Time mocking
