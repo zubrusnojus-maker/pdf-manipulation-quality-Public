@@ -67,7 +67,9 @@ class PDFProcessor:
                 "text-generation",
                 model="meta-llama/Llama-2-13b-chat-hf",
                 device_map="auto",
-                torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+                model_kwargs={
+                    "torch_dtype": torch.float16 if torch.cuda.is_available() else torch.float32
+                },
                 max_new_tokens=512,
                 do_sample=False,
                 temperature=0.7,
@@ -78,7 +80,9 @@ class PDFProcessor:
                 "text-generation",
                 model="mistralai/Mistral-7B-Instruct-v0.2",
                 device_map="auto",
-                torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+                model_kwargs={
+                    "torch_dtype": torch.float16 if torch.cuda.is_available() else torch.float32
+                },
                 max_new_tokens=256,
                 do_sample=True,
                 temperature=0.7,
