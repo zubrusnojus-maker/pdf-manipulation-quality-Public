@@ -123,52 +123,51 @@ class PDFProcessor:
             operation: "summarize" or "rewrite"
         """
         print(f"Performing text {operation}...")
-        rewritten = []
+        manipulated_texts = []
         
-        for txt in tqdm(page_texts, desc=f"Text {operation}"):
-            if not txt or len(txt.strip()) < 50:
+        for text_content in tqdm(page_texts, desc=f"Text {operation}"):
+            if not text_content or len(text_content.strip()) < 50:
                 # Skip empty or very short text
-                rewritten.append(txt)
+                manipulated_texts.append(text_content)
                 continue
             
             try:
                 # Truncate if text is too long for the model
                 max_input_length = 2048 if self.model_size == "large" else 1024
-                if len(txt) > max_input_length:
-                    txt = txt[:max_input_length]
+                truncated_text = text_content[:max_input_length] if len(text_content) > max_input_length else text_content
                 
                 # Format prompt for instruction-following models
                 if operation == "summarize":
-                    prompt = f"<s>[INST] Summarize the following text concisely while preserving key information:\n\n{txt}\n\n[/INST]"
+                    prompt = f"<s>[INST] Summarize the following text concisely while preserving key information:\n\n{truncated_text}\n\n[/INST]"
                 else:
-                    prompt = f"<s>[INST] Rewrite the following text to improve clarity and readability:\n\n{txt}\n\n[/INST]"
+                    prompt = f"<s>[INST] Rewrite the following text to improve clarity and readability:\n\n{truncated_text}\n\n[/INST]"
                 
-                result = self.summariser(prompt)
+                model_result = self.summariser(prompt)
                 
-                if isinstance(result, list) and len(result) > 0:
-                    output_text = result[0].get("generated_text", "")
+                if isinstance(model_result, list) and len(model_result) > 0:
+                    processed_text = model_result[0].get("generated_text", "")
                     # Extract answer after [/INST] tag
-                    if "[/INST]" in output_text:
-                        output_text = output_text.split("[/INST]")[-1].strip()
+                    if "[/INST]" in processed_text:
+                        processed_text = processed_text.split("[/INST]")[-1].strip()
                 else:
-                    output_text = txt
+                    processed_text = text_content
                 
-                rewritten.append(output_text)
+                manipulated_texts.append(processed_text)
             except Exception as e:
                 print(f"Warning: Failed to process text: {e}")
-                rewritten.append(txt)
+                manipulated_texts.append(text_content)
         
-        return rewritten
+        return manipulated_texts
     
-    def reinsert_text(self, doc, rewritten_texts, fontsize=12):
+    def reinsert_text(self, document, manipulated_texts, fontsize=12):
         """Re-insert modified text back into PDF pages."""
         print("Re-inserting text into PDF...")
         
-        for i, new_text in enumerate(tqdm(rewritten_texts, desc="Inserting text")):
-            if i >= len(doc):
+        for page_index, modified_text in enumerate(tqdm(manipulated_texts, desc="Inserting text")):
+            if page_index >= len(document):
                 break
             
-            page = doc[i]
+            page = document[page_index]
             
             # Clear existing text (optional - comment out to overlay)
             # page.clean_contents()
@@ -177,7 +176,7 @@ class PDFProcessor:
             # Adjust (x, y) coordinates for your layout needs
             page.insert_textbox(
                 fitz.Rect(72, 72, page.rect.width - 72, page.rect.height - 72),
-                new_text,
+                modified_text,
                 fontsize=fontsize,
                 color=(0, 0, 0),
                 align=0
@@ -198,24 +197,24 @@ class PDFProcessor:
             self.load_models()
         
         # Load PDF
-        doc = self.load_pdf(input_path)
+        document = self.load_pdf(input_path)
         
         # Rasterize
-        images = self.rasterize_pdf(input_path, dpi=dpi)
+        rasterized_images = self.rasterize_pdf(input_path, dpi=dpi)
         
         # Extract text
-        page_texts = self.extract_text_from_images(images)
+        extracted_page_texts = self.extract_text_from_images(rasterized_images)
         
         # Manipulate text
-        rewritten_texts = self.manipulate_text(page_texts, operation=operation)
+        manipulated_page_texts = self.manipulate_text(extracted_page_texts, operation=operation)
         
         # Re-insert text
-        self.reinsert_text(doc, rewritten_texts)
+        self.reinsert_text(document, manipulated_page_texts)
         
         # Save
         print(f"Saving processed PDF to: {output_path}")
-        doc.save(output_path)
-        doc.close()
+        document.save(output_path)
+        document.close()
         
         print("✓ Processing complete!")
         return output_path
@@ -231,14 +230,14 @@ def post_process_with_pikepdf(input_path, output_path):
     """
     print("Post-processing with pikepdf...")
     
-    src = pikepdf.Pdf.open(input_path)
-    dst = pikepdf.Pdf.new()
+    source_pdf = pikepdf.Pdf.open(input_path)
+    destination_pdf = pikepdf.Pdf.new()
     
-    for page in tqdm(src.pages, desc="Copying pages"):
-        dst.pages.append(page)
+    for page in tqdm(source_pdf.pages, desc="Copying pages"):
+        destination_pdf.pages.append(page)
     
-    dst.save(output_path)
-    src.close()
+    destination_pdf.save(output_path)
+    source_pdf.close()
     
     print(f"✓ Optimized PDF saved to: {output_path}")
 

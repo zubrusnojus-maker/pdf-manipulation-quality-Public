@@ -3,6 +3,7 @@
 ## Executive Summary
 
 For **quality-focused** PDF text manipulation, use:
+
 - **OCR**: `microsoft/trocr-large-printed`
 - **Text Processing**: `meta-llama/Llama-2-13b-chat-hf` (large) or `mistralai/Mistral-7B-Instruct-v0.2` (default)
 
@@ -30,6 +31,7 @@ For **quality-focused** PDF text manipulation, use:
 ### Quality Breakdown
 
 #### Llama-2-13B-Chat (Highest Quality)
+
 - ✅ Best summarization coherence
 - ✅ Excellent instruction following
 - ✅ Minimal hallucinations (4× better than BART)
@@ -38,6 +40,7 @@ For **quality-focused** PDF text manipulation, use:
 - ❌ Slower inference (~2.5 tokens/sec on A100)
 
 #### Mistral-7B-Instruct (Best Balance) ⭐ **RECOMMENDED**
+
 - ✅ Near-Llama quality at 7B params
 - ✅ Wider 8K context window
 - ✅ Runs on consumer GPUs (8GB)
@@ -46,6 +49,7 @@ For **quality-focused** PDF text manipulation, use:
 - ❌ Slightly more verbose than Llama
 
 #### BART-Large (Baseline)
+
 - ✅ Very fast
 - ✅ Low VRAM requirement
 - ❌ Generic summaries, loses nuance
@@ -93,6 +97,7 @@ BART-Large:          ~3GB VRAM (RTX 2060, GTX 1080 Ti)
 ## Optimization Tips
 
 ### For Maximum Quality
+
 ```python
 pipeline(
     "text-generation",
@@ -107,6 +112,7 @@ pipeline(
 ```
 
 ### For Production (Speed + Quality)
+
 ```python
 pipeline(
     "text-generation",
@@ -130,24 +136,28 @@ pipeline(
 ## Final Recommendations by Use Case
 
 ### 📊 **Academic/Research Documents**
+
 - OCR: `microsoft/trocr-large-printed`
 - Text: `meta-llama/Llama-2-13b-chat-hf`
 - Layout: `microsoft/layoutlmv3-base`
 - Priority: Accuracy > Speed
 
 ### 💼 **Business Documents (Production)**
+
 - OCR: `microsoft/trocr-large-printed`
 - Text: `mistralai/Mistral-7B-Instruct-v0.2`
 - Layout: `microsoft/layoutlmv3-base` (optional)
 - Priority: Quality + Speed balance
 
 ### ⚡ **High-Volume Processing**
+
 - OCR: `microsoft/trocr-base-printed`
 - Text: `facebook/bart-large-cnn`
 - Layout: Skip or use `impira/layoutlm-document-qa`
 - Priority: Speed > Quality
 
 ### 💻 **Low-Resource/Edge Devices**
+
 - OCR: `paddleocr/paddleocr`
 - Text: `microsoft/phi-2` (quantized Q4)
 - Layout: Skip

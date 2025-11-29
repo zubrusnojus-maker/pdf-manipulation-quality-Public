@@ -22,26 +22,26 @@ def quick_process(pdf_path):
     
     # 1. Load PDF & rasterise
     print("Loading and rasterizing PDF...")
-    doc = fitz.open(pdf_path)
-    imgs = pdf2image.convert_from_path(pdf_path, dpi=300)
+    document = fitz.open(pdf_path)
+    images = pdf2image.convert_from_path(pdf_path, dpi=300)
     
     # 2. OCR (High-quality)
     print("Performing high-quality OCR (TrOCR Large)...")
-    ocr = pipeline(
+    ocr_pipeline = pipeline(
         "image-to-text", 
         model="microsoft/trocr-large-printed",
         device=0 if torch.cuda.is_available() else -1
     )
-    texts = []
-    for i, img in enumerate(imgs):
-        print(f"  Processing page {i+1}/{len(imgs)}")
-        result = ocr(img)
-        text = result[0].get("generated_text", "") if result else ""
-        texts.append(text)
+    page_texts = []
+    for page_index, image in enumerate(images):
+        print(f"  Processing page {page_index + 1}/{len(images)}")
+        ocr_result = ocr_pipeline(image)
+        extracted_text = ocr_result[0].get("generated_text", "") if ocr_result else ""
+        page_texts.append(extracted_text)
     
     # 3. Summarise with quality model (Mistral-7B-Instruct)
     print("Summarizing text with Mistral-7B-Instruct...")
-    summ = pipeline(
+    summarizer_pipeline = pipeline(
         "text-generation",
         model="mistralai/Mistral-7B-Instruct-v0.2",
         device_map="auto",
@@ -51,41 +51,40 @@ def quick_process(pdf_path):
         temperature=0.7
     )
     
-    rewrites = []
-    for i, t in enumerate(texts):
-        print(f"  Processing text {i+1}/{len(texts)}")
-        if len(t.strip()) < 50:
-            rewrites.append(t)
+    summarized_texts = []
+    for text_index, text_content in enumerate(page_texts):
+        print(f"  Processing text {text_index + 1}/{len(page_texts)}")
+        if len(text_content.strip()) < 50:
+            summarized_texts.append(text_content)
             continue
         
         try:
             # Truncate long text
-            if len(t) > 1024:
-                t = t[:1024]
+            truncated_text = text_content[:1024] if len(text_content) > 1024 else text_content
             
             # Format for instruction model
-            prompt = f"<s>[INST] Summarize the following text concisely:\n\n{t}\n\n[/INST]"
-            result = summ(prompt)
+            prompt = f"<s>[INST] Summarize the following text concisely:\n\n{truncated_text}\n\n[/INST]"
+            summarizer_result = summarizer_pipeline(prompt)
             
-            output = result[0].get("generated_text", t) if result else t
+            summarized_output = summarizer_result[0].get("generated_text", text_content) if summarizer_result else text_content
             # Extract answer after [/INST]
-            if "[/INST]" in output:
-                output = output.split("[/INST]")[-1].strip()
+            if "[/INST]" in summarized_output:
+                summarized_output = summarized_output.split("[/INST]")[-1].strip()
             
-            rewrites.append(output)
+            summarized_texts.append(summarized_output)
         except Exception as e:
             print(f"  Warning: {e}")
-            rewrites.append(t)
+            summarized_texts.append(text_content)
     
     # 4. Overlay back into PDF
     print("Inserting text into PDF...")
-    for i, new_t in enumerate(rewrites):
-        if i >= len(doc):
+    for page_index, summarized_text in enumerate(summarized_texts):
+        if page_index >= len(document):
             break
-        page = doc[i]
+        page = document[page_index]
         page.insert_textbox(
             fitz.Rect(72, 72, page.rect.width - 72, page.rect.height - 72),
-            new_t,
+            summarized_text,
             fontsize=12,
             color=(0, 0, 0)
         )
@@ -93,8 +92,8 @@ def quick_process(pdf_path):
     # 5. Save
     output_path = str(Path(pdf_path).parent / f"edited_{Path(pdf_path).name}")
     print(f"Saving to: {output_path}")
-    doc.save(output_path)
-    doc.close()
+    document.save(output_path)
+    document.close()
     
     print(f"✓ Done! Output saved to: {output_path}")
     return output_path
