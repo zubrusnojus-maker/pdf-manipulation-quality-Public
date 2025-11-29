@@ -36,7 +36,7 @@ def quick_process(pdf_path):
     ocr_pipeline = pipeline(
         "image-to-text",
         model="microsoft/trocr-large-printed",
-        device=0 if torch.cuda.is_available() else -1
+        device=0 if torch.cuda.is_available() else -1,
     )
     page_texts = []
     for page_index, image in enumerate(images):
@@ -54,7 +54,7 @@ def quick_process(pdf_path):
         torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
         max_new_tokens=256,
         do_sample=True,
-        temperature=0.7
+        temperature=0.7,
     )
 
     summarized_texts = []
@@ -74,8 +74,7 @@ def quick_process(pdf_path):
 
             # Format for instruction model
             prompt = (
-                f"<s>[INST] Summarize the following text concisely:\n\n"
-                f"{truncated_text}\n\n[/INST]"
+                f"<s>[INST] Summarize the following text concisely:\n\n{truncated_text}\n\n[/INST]"
             )
             summarizer_result = summarizer_pipeline(prompt)
 
@@ -91,7 +90,7 @@ def quick_process(pdf_path):
             summarized_texts.append(summarized_output)
         except Exception as e:
             print(f"  Warning: {e}")
-            summarized_texts.append(text_content)    # 4. Overlay back into PDF
+            summarized_texts.append(text_content)  # 4. Overlay back into PDF
     print("Inserting text into PDF...")
     for page_index, summarized_text in enumerate(summarized_texts):
         if page_index >= len(document):
@@ -101,7 +100,7 @@ def quick_process(pdf_path):
             fitz.Rect(72, 72, page.rect.width - 72, page.rect.height - 72),
             summarized_text,
             fontsize=12,
-            color=(0, 0, 0)
+            color=(0, 0, 0),
         )
 
     # 5. Save

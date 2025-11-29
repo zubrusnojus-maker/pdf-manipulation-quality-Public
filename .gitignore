@@ -1,3 +1,8 @@
 notebooks/data
 notebooks/cifar_net.pth
 .ipynb_checkpoints/
+
+# Virtual environment
+.venv/
+venv/
+env/

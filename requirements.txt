@@ -1,6 +1,23 @@
+# Complete dependencies for PDF processing and notebooks
+# Updated for Python 3.12+ compatibility (November 2025)
+
+# Core ML/AI frameworks
+torch>=2.2.0
+torchvision>=0.15.0
+transformers>=4.44.0
+accelerate>=0.20.0
+
+# PDF processing
+pymupdf
+pdf2image
+pikepdf
+
+# Notebook/visualization
 ipywidgets==8.1.2
 matplotlib==3.8.4
 pandas==2.2.2
-torch==2.8.0
-torchvision==0.23.0
-tqdm==4.66.4
+
+# Utilities
+tqdm>=4.66.0
+sentencepiece  # Required for Llama/Mistral tokenizers
+protobuf       # Required for some model configs
