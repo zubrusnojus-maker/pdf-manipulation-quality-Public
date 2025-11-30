@@ -32,6 +32,10 @@ redacted_*_mappings.json
 FINAL_*.pdf
 edited_*.pdf
 
+# Sample/test PDF files (keep repo lightweight)
+2021.09.pdf
+*.pdf
+
 node_modules
 
 # Logs
