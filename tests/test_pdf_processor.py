@@ -3,13 +3,10 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from pdf_processor import (
-    LAYOUT_TYPES,
-    MIN_TEXT_LENGTH,
-    LayoutRegion,
-    PDFProcessor,
-    post_process_with_pikepdf,
-)
+
+from pdf_toolkit.core.constants import MIN_TEXT_LENGTH
+from pdf_toolkit.core.layout import LAYOUT_TYPES, LayoutRegion
+from pdf_toolkit.core.processor import PDFProcessor
 
 
 class TestPDFProcessor:

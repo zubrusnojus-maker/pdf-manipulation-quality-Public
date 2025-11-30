@@ -2,6 +2,10 @@
 """
 Quick-start one-liner script for PDF processing.
 
+This standalone script is maintained for quick demos. For production use,
+consider using the pdf_toolkit package or CLI commands instead.
+See MIGRATION_GUIDE.md for details.
+
 Usage:
     python quick_pdf_process.py mydoc.pdf
 
@@ -9,7 +13,18 @@ This will create 'edited_mydoc.pdf' with summarized/rewritten content.
 """
 
 import sys
+import warnings
 from pathlib import Path
+
+# Deprecation notice
+warnings.warn(
+    "quick_pdf_process.py is a standalone demo script. "
+    "For production use, consider using the pdf_toolkit package "
+    "(from pdf_toolkit.core.processor import PDFProcessor) or "
+    "the 'pdf-process' CLI command. See MIGRATION_GUIDE.md for details.",
+    FutureWarning,
+    stacklevel=2,
+)
 
 import fitz
 import pdf2image

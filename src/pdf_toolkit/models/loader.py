@@ -3,7 +3,7 @@
 import torch
 from transformers import pipeline
 
-from pdf_toolkit.core.constants import MODELS
+from pdf_toolkit.core.constants import get_model_with_revision
 
 
 class ModelLoader:
@@ -15,20 +15,20 @@ class ModelLoader:
         self.torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
     def load_ocr_model(self):
-        """Load the TrOCR model for optical character recognition."""
+        """Load the TrOCR model for optical character recognition with pinned version."""
         print("Loading high-quality OCR model (TrOCR Large)...")
         return pipeline(
             "image-to-text",
-            model=MODELS["ocr"],
+            **get_model_with_revision("ocr"),
             device=self.device,
         )
 
     def load_layout_model(self):
-        """Load the DiT model for document layout classification."""
+        """Load the DiT model for document layout classification with pinned version."""
         print("Loading layout model (DiT for document classification)...")
         return pipeline(
             "image-classification",
-            model=MODELS["layout"],
+            **get_model_with_revision("layout"),
             device=self.device,
         )
 
@@ -44,7 +44,7 @@ class ModelLoader:
         if model_size == "large":
             return pipeline(
                 "text-generation",
-                model=MODELS["text_large"],
+                **get_model_with_revision("text_large"),
                 device_map="auto",
                 model_kwargs={"torch_dtype": self.torch_dtype},
                 max_new_tokens=512,
@@ -54,7 +54,7 @@ class ModelLoader:
         else:
             return pipeline(
                 "text-generation",
-                model=MODELS["text_small"],
+                **get_model_with_revision("text_small"),
                 device_map="auto",
                 model_kwargs={"torch_dtype": self.torch_dtype},
                 max_new_tokens=256,

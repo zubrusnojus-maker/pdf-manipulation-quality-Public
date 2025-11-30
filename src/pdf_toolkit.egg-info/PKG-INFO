@@ -1,3 +1,32 @@
+Metadata-Version: 2.4
+Name: pdf-toolkit
+Version: 1.0.0
+Summary: Quality-focused PDF processing with OCR and AI text manipulation
+Author: PDF Toolkit Team
+License: MIT
+Keywords: pdf,ocr,text-extraction,redaction,anonymization
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: torch>=2.0.0
+Requires-Dist: transformers>=4.40.0
+Requires-Dist: pymupdf>=1.23.0
+Requires-Dist: pdf2image>=1.16.0
+Requires-Dist: pikepdf>=8.0.0
+Requires-Dist: tqdm>=4.65.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Dynamic: license-file
+
 # PDF Toolkit: High-Quality PDF Processing with OCR and AI
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)

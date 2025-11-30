@@ -1,15 +1,16 @@
 """Tests for quick PDF processing script."""
 
-from unittest.mock import MagicMock, patch
-import pytest
 import sys
+from unittest.mock import MagicMock, patch
 
-from quick_pdf_process import (
-    MIN_ARGS_REQUIRED,
-    MIN_TEXT_LENGTH,
-    MAX_INPUT_LENGTH,
-    quick_process,
-)
+from pdf_toolkit.core.constants import MIN_TEXT_LENGTH
+
+# These constants are specific to quick_pdf_process.py and not in the package
+MIN_ARGS_REQUIRED = 2
+MAX_INPUT_LENGTH = 1024
+
+# Import quick_process from the legacy wrapper for now
+from quick_pdf_process import quick_process
 
 
 class TestConstants:
@@ -35,15 +36,11 @@ class TestQuickProcess:
     @patch("quick_pdf_process.pdf2image.convert_from_path")
     @patch("quick_pdf_process.pipeline")
     @patch("quick_pdf_process.torch.cuda.is_available", return_value=False)
-    def test_quick_process_basic(
-        self, mock_cuda, mock_pipeline, mock_convert, mock_fitz
-    ):
+    def test_quick_process_basic(self, mock_cuda, mock_pipeline, mock_convert, mock_fitz):
         """Test basic quick_process execution."""
         # Setup mocks
         mock_ocr = MagicMock(return_value=[{"generated_text": "A" * 100}])
-        mock_summarizer = MagicMock(
-            return_value=[{"generated_text": "[/INST] Summary text"}]
-        )
+        mock_summarizer = MagicMock(return_value=[{"generated_text": "[/INST] Summary text"}])
         mock_pipeline.side_effect = [mock_ocr, mock_summarizer]
 
         mock_image = MagicMock()
@@ -71,9 +68,7 @@ class TestQuickProcess:
     @patch("quick_pdf_process.pdf2image.convert_from_path")
     @patch("quick_pdf_process.pipeline")
     @patch("quick_pdf_process.torch.cuda.is_available", return_value=False)
-    def test_quick_process_multiple_pages(
-        self, mock_cuda, mock_pipeline, mock_convert, mock_fitz
-    ):
+    def test_quick_process_multiple_pages(self, mock_cuda, mock_pipeline, mock_convert, mock_fitz):
         """Test processing multiple pages."""
         # Setup mocks
         mock_ocr = MagicMock(
@@ -197,14 +192,10 @@ class TestQuickProcess:
     @patch("quick_pdf_process.pdf2image.convert_from_path")
     @patch("quick_pdf_process.pipeline")
     @patch("quick_pdf_process.torch.cuda.is_available", return_value=True)
-    def test_quick_process_gpu_available(
-        self, mock_cuda, mock_pipeline, mock_convert, mock_fitz
-    ):
+    def test_quick_process_gpu_available(self, mock_cuda, mock_pipeline, mock_convert, mock_fitz):
         """Test that GPU is used when available."""
         mock_ocr = MagicMock(return_value=[{"generated_text": "E" * 100}])
-        mock_summarizer = MagicMock(
-            return_value=[{"generated_text": "[/INST] Summary"}]
-        )
+        mock_summarizer = MagicMock(return_value=[{"generated_text": "[/INST] Summary"}])
         mock_pipeline.side_effect = [mock_ocr, mock_summarizer]
 
         mock_convert.return_value = [MagicMock()]
@@ -227,9 +218,7 @@ class TestQuickProcess:
     @patch("quick_pdf_process.pdf2image.convert_from_path")
     @patch("quick_pdf_process.pipeline")
     @patch("quick_pdf_process.torch.cuda.is_available", return_value=False)
-    def test_quick_process_text_truncation(
-        self, mock_cuda, mock_pipeline, mock_convert, mock_fitz
-    ):
+    def test_quick_process_text_truncation(self, mock_cuda, mock_pipeline, mock_convert, mock_fitz):
         """Test that long text is truncated before summarization."""
         # Setup - very long text
         long_text = "F" * 2000
@@ -258,14 +247,10 @@ class TestQuickProcess:
     @patch("quick_pdf_process.pdf2image.convert_from_path")
     @patch("quick_pdf_process.pipeline")
     @patch("quick_pdf_process.torch.cuda.is_available", return_value=False)
-    def test_quick_process_no_inst_tag(
-        self, mock_cuda, mock_pipeline, mock_convert, mock_fitz
-    ):
+    def test_quick_process_no_inst_tag(self, mock_cuda, mock_pipeline, mock_convert, mock_fitz):
         """Test handling result without [/INST] tag."""
         mock_ocr = MagicMock(return_value=[{"generated_text": "G" * 100}])
-        mock_summarizer = MagicMock(
-            return_value=[{"generated_text": "Raw output without tag"}]
-        )
+        mock_summarizer = MagicMock(return_value=[{"generated_text": "Raw output without tag"}])
         mock_pipeline.side_effect = [mock_ocr, mock_summarizer]
 
         mock_convert.return_value = [MagicMock()]
@@ -328,9 +313,7 @@ class TestQuickProcess:
     ):
         """Test processing file in a subdirectory."""
         mock_ocr = MagicMock(return_value=[{"generated_text": "J" * 100}])
-        mock_summarizer = MagicMock(
-            return_value=[{"generated_text": "[/INST] Summary"}]
-        )
+        mock_summarizer = MagicMock(return_value=[{"generated_text": "[/INST] Summary"}])
         mock_pipeline.side_effect = [mock_ocr, mock_summarizer]
 
         mock_convert.return_value = [MagicMock()]

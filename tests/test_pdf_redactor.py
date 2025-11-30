@@ -3,7 +3,7 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from pdf_redactor import PDFRedactor, main
+from pdf_toolkit.redaction.redactor import PDFRedactor
 
 
 class TestPDFRedactor:

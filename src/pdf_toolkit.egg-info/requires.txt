@@ -1,0 +1,11 @@
+torch>=2.0.0
+transformers>=4.40.0
+pymupdf>=1.23.0
+pdf2image>=1.16.0
+pikepdf>=8.0.0
+tqdm>=4.65.0
+
+[dev]
+pytest>=7.0.0
+pytest-cov>=4.0.0
+ruff>=0.1.0

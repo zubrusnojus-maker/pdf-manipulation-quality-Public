@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from pdf_toolkit.redaction.redactor import PDFRedactor
+
 
 class TestPDFRedactorIntegration:
     """Integration tests for complete PDF redaction workflow."""
@@ -40,7 +42,7 @@ class TestPDFRedactorIntegration:
 
     def test_full_detection_workflow(self, sample_text_block):
         """Test complete detection workflow with realistic document."""
-        from pdf_redactor import PDFRedactor
+        # Import moved to top of file
 
         redactor = PDFRedactor()
         detections = redactor.detect_sensitive_data(sample_text_block)
@@ -64,7 +66,7 @@ class TestPDFRedactorIntegration:
 
     def test_detection_and_save_workflow(self, sample_text_block, tmp_path: Path):
         """Test detection followed by mapping save."""
-        from pdf_redactor import PDFRedactor
+        # Import moved to top of file
 
         redactor = PDFRedactor()
         redactor.detect_sensitive_data(sample_text_block)
@@ -88,7 +90,7 @@ class TestPDFRedactorIntegration:
 
     def test_consistent_mappings_across_pages(self, sample_text_block):
         """Test that same value gets same placeholder across multiple calls."""
-        from pdf_redactor import PDFRedactor
+        # Import moved to top of file
 
         redactor = PDFRedactor()
 
@@ -109,7 +111,7 @@ class TestPDFRedactorIntegration:
 
     def test_redact_pdf_stats_structure(self):
         """Test that redact_pdf returns proper stats structure."""
-        from pdf_redactor import PDFRedactor
+        # Import moved to top of file
 
         redactor = PDFRedactor()
 
@@ -128,7 +130,7 @@ class TestPDFRedactorIntegration:
 
     def test_placeholder_format(self):
         """Test that placeholders follow expected format."""
-        from pdf_redactor import PDFRedactor
+        # Import moved to top of file
 
         redactor = PDFRedactor()
 
@@ -152,7 +154,7 @@ class TestPDFRedactorIntegration:
 
     def test_counter_persistence(self):
         """Test that counters persist across multiple detections."""
-        from pdf_redactor import PDFRedactor
+        # Import moved to top of file
 
         redactor = PDFRedactor()
 
@@ -172,7 +174,7 @@ class TestEdgeCases:
 
     def test_very_long_text(self):
         """Test handling of very long text."""
-        from pdf_redactor import PDFRedactor
+        # Import moved to top of file
 
         redactor = PDFRedactor()
         # Create text with many monetary values
@@ -184,7 +186,7 @@ class TestEdgeCases:
 
     def test_special_regex_characters(self):
         """Test that special regex characters don't break detection."""
-        from pdf_redactor import PDFRedactor
+        # Import moved to top of file
 
         redactor = PDFRedactor()
         text = "Amount: 1,000.00 with special chars: $^.*+?{}[]|()"
@@ -198,7 +200,7 @@ class TestEdgeCases:
 
     def test_overlapping_patterns(self):
         """Test handling when patterns might overlap."""
-        from pdf_redactor import PDFRedactor
+        # Import moved to top of file
 
         redactor = PDFRedactor()
         # 8-digit number could be account OR part of a phone number
@@ -212,7 +214,7 @@ class TestEdgeCases:
 
     def test_whitespace_handling(self):
         """Test handling of various whitespace."""
-        from pdf_redactor import PDFRedactor
+        # Import moved to top of file
 
         redactor = PDFRedactor()
         text = "Amount:\t1,000.00\n\nDate:  01/01/2024"
@@ -224,7 +226,7 @@ class TestEdgeCases:
 
     def test_case_sensitivity_companies(self):
         """Test company name detection requires uppercase pattern."""
-        from pdf_redactor import PDFRedactor
+        # Import moved to top of file
 
         redactor = PDFRedactor()
         # Company pattern requires uppercase letters and ending in LTD/LIMITED/INC etc
