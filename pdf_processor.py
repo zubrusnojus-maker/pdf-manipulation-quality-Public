@@ -185,8 +185,8 @@ class PDFProcessor:
 
             page = document[page_index]
 
-            # Clear existing text (optional - comment out to overlay)
-            # page.clean_contents()
+            # Clear existing text before inserting new text
+            page.clean_contents()
 
             # Insert new text - simple overlay at top left
             # Adjust (x, y) coordinates for your layout needs

@@ -5,7 +5,9 @@
       "args": ["-y", "task-master-ai"],
       "env": {
         "TASK_MASTER_TOOLS": "standard",
-        "OLLAMA_BASE_URL": "http://localhost:11434"
+        "OLLAMA_BASE_URL": "http://localhost:11434",
+        "PROJECT_ROOT": "${workspaceFolder}",
+        "DEBUG": "false"
       },
       "type": "stdio"
     }
