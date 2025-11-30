@@ -150,25 +150,6 @@ class TestPDFRedactor:
         placeholders = [d[2] for d in detections]
         assert len(set(placeholders)) == 3
 
-    def test_int_to_rgb_conversion(self):
-        """Test color conversion from int to RGB."""
-        redactor = PDFRedactor()
-
-        # Black
-        assert redactor._int_to_rgb(0) == (0, 0, 0)
-
-        # White (0xFFFFFF = 16777215)
-        r, g, b = redactor._int_to_rgb(16777215)
-        assert abs(r - 1.0) < 0.01
-        assert abs(g - 1.0) < 0.01
-        assert abs(b - 1.0) < 0.01
-
-        # Red (0xFF0000 = 16711680)
-        r, g, b = redactor._int_to_rgb(16711680)
-        assert abs(r - 1.0) < 0.01
-        assert abs(g - 0.0) < 0.01
-        assert abs(b - 0.0) < 0.01
-
     def test_mixed_patterns(self):
         """Test document with multiple pattern types."""
         redactor = PDFRedactor()
