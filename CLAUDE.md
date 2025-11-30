@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Quality-focused PDF processing toolkit combining OCR (TrOCR Large), layout analysis (LayoutLMv3), and AI text manipulation (Llama-2/Mistral) to extract, summarize/rewrite, and re-insert text into PDFs. All models run 100% locally after initial download.
+Quality-focused PDF processing toolkit combining OCR (TrOCR Large), layout analysis (DiT), and AI text manipulation (Llama-2/Mistral) to extract, summarize/rewrite, and re-insert text into PDFs. All models run 100% locally after initial download.
 
 ## Commands
 
@@ -46,9 +46,24 @@ System requirement: `poppler-utils` for pdf2image rasterization.
 
 1. **Rasterization** - PDF to images via `pdf2image` (300 DPI default)
 2. **OCR** - `microsoft/trocr-large-printed` extracts text from images
-3. **Text Manipulation** - Mistral-7B (balanced) or Llama-2-13B (high quality) for summarization/rewriting
-4. **Re-insertion** - PyMuPDF (`fitz`) overlays modified text onto original pages
-5. **Optimization** (optional) - `pikepdf` for file size reduction
+3. **Layout Analysis** (optional) - `microsoft/dit-base-finetuned-rvlcdip` classifies document type
+4. **Text Manipulation** - Mistral-7B (balanced) or Llama-2-13B (high quality) for summarization/rewriting
+5. **Re-insertion** - PyMuPDF (`fitz`) overlays modified text with layout-aware formatting
+6. **Optimization** (optional) - `pikepdf` for file size reduction
+
+### Layout Analysis
+
+When `--use-layout` is enabled, the processor:
+- Classifies document type (invoice, letter, form, presentation, etc.)
+- Adds document context to LLM prompts for better summarization
+- Adjusts text formatting (font size, alignment) based on document type
+
+| Document Type | Layout Region | Font Multiplier | Alignment |
+|--------------|---------------|-----------------|-----------|
+| presentation, advertisement | header | 1.2x | centered |
+| letter, email, memo | paragraph | 1.0x | left |
+| invoice, form, budget | table | 0.9x | left |
+| footer | footer | 0.8x | centered |
 
 ### Key Files
 
@@ -111,10 +126,34 @@ page.insert_textbox(
 
 First run downloads models to `~/.cache/huggingface/hub/`:
 - TrOCR Large: ~2.2GB
+- DiT (layout): ~350MB
 - Mistral-7B: ~14GB
 - Llama-2-13B: ~26GB
 
 Verify downloads completed before testing - incomplete downloads cause cryptic errors.
+
+## Task Master AI Integration
+
+This project uses Task Master AI for task management. See `.rules` for complete documentation.
+
+### Essential Commands
+```bash
+task-master list                              # Show all tasks
+task-master next                              # Get next task to work on
+task-master show <id>                         # View task details (e.g., 1.2)
+task-master set-status --id=<id> --status=done  # Mark complete
+
+# Task creation and expansion
+task-master add-task --prompt="description" --research
+task-master expand --id=<id> --research --force
+task-master analyze-complexity --research
+```
+
+### Key Files
+- `.taskmaster/tasks/tasks.json` - Main task database (auto-managed, don't edit manually)
+- `.taskmaster/config.json` - AI model config (use `task-master models` to modify)
+- `.taskmaster/docs/prd.txt` - Product requirements document
+- `.env` - API keys (copy from `.env.example`)
 
 ## Common Pitfalls
 
@@ -123,3 +162,4 @@ Verify downloads completed before testing - incomplete downloads cause cryptic e
 - Don't hardcode `device=0` - always check `torch.cuda.is_available()`
 - Don't skip text truncation - long text exceeds model context
 - Always wrap model calls in try/except with fallback to original text
+- Don't manually edit `tasks.json` or `.taskmaster/config.json` - use Task Master commands

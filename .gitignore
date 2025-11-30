@@ -23,6 +23,15 @@ htmlcov/
 # Test artifacts
 test_*.pdf
 test_*.json
+
+# Output files (generated PDFs and mappings)
+anonymized_*.pdf
+anonymized_*.json
+redacted_*.pdf
+redacted_*_mappings.json
+FINAL_*.pdf
+edited_*.pdf
+
 node_modules
 
 # Logs

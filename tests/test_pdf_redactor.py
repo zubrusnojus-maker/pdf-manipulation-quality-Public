@@ -1,8 +1,11 @@
 """Tests for PDF redaction functionality."""
 
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-from pdf_redactor import PDFRedactor
+import pytest
+
+from pdf_redactor import PDFRedactor, main
 
 
 class TestPDFRedactor:
@@ -270,3 +273,460 @@ class TestPDFRedactor:
         redactor2 = PDFRedactor()
         assert redactor2.mappings == {}
         assert len(redactor2.counters) == 0
+
+
+class TestIntToRgb:
+    """Test the _int_to_rgb color conversion method."""
+
+    def test_int_to_rgb_black(self):
+        """Test conversion of black (0)."""
+        redactor = PDFRedactor()
+        result = redactor._int_to_rgb(0)
+        assert result == (0, 0, 0)
+
+    def test_int_to_rgb_red(self):
+        """Test conversion of red."""
+        redactor = PDFRedactor()
+        # Red in RGB is 0xFF0000 = 16711680
+        result = redactor._int_to_rgb(16711680)
+        assert result == (1.0, 0.0, 0.0)
+
+    def test_int_to_rgb_green(self):
+        """Test conversion of green."""
+        redactor = PDFRedactor()
+        # Green in RGB is 0x00FF00 = 65280
+        result = redactor._int_to_rgb(65280)
+        assert result == (0.0, 1.0, 0.0)
+
+    def test_int_to_rgb_blue(self):
+        """Test conversion of blue."""
+        redactor = PDFRedactor()
+        # Blue in RGB is 0x0000FF = 255
+        result = redactor._int_to_rgb(255)
+        assert result == (0.0, 0.0, 1.0)
+
+    def test_int_to_rgb_white(self):
+        """Test conversion of white."""
+        redactor = PDFRedactor()
+        # White in RGB is 0xFFFFFF = 16777215
+        result = redactor._int_to_rgb(16777215)
+        assert result == (1.0, 1.0, 1.0)
+
+    def test_int_to_rgb_mixed_color(self):
+        """Test conversion of a mixed color."""
+        redactor = PDFRedactor()
+        # RGB(128, 64, 32) = 0x804020 = 8405024
+        result = redactor._int_to_rgb(8405024)
+        assert abs(result[0] - 128/255) < 0.01
+        assert abs(result[1] - 64/255) < 0.01
+        assert abs(result[2] - 32/255) < 0.01
+
+
+class TestRedactPage:
+    """Test the redact_page method."""
+
+    def test_redact_page_no_sensitive_data(self):
+        """Test redacting a page with no sensitive data."""
+        redactor = PDFRedactor()
+
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": [
+                {
+                    "type": 0,
+                    "lines": [
+                        {
+                            "spans": [
+                                {"text": "Normal text without sensitive data", "bbox": (0, 0, 100, 20), "size": 12, "color": 0}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        stats = redactor.redact_page(mock_page)
+
+        assert stats["replacements"] == 0
+        mock_page.draw_rect.assert_not_called()
+        mock_page.insert_text.assert_not_called()
+
+    def test_redact_page_with_sensitive_data(self):
+        """Test redacting a page with sensitive data."""
+        redactor = PDFRedactor()
+
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": [
+                {
+                    "type": 0,
+                    "lines": [
+                        {
+                            "spans": [
+                                {"text": "Amount: 1,234.56", "bbox": (10, 10, 100, 30), "size": 12, "color": 0}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        stats = redactor.redact_page(mock_page)
+
+        assert stats["replacements"] == 1
+        assert stats["types"]["monetary_amount"] == 1
+        mock_page.draw_rect.assert_called_once()
+        mock_page.insert_text.assert_called_once()
+
+    def test_redact_page_skips_non_text_blocks(self):
+        """Test that non-text blocks (images) are skipped."""
+        redactor = PDFRedactor()
+
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": [
+                {
+                    "type": 1,  # Image block
+                    "lines": []
+                }
+            ]
+        }
+
+        stats = redactor.redact_page(mock_page)
+
+        assert stats["replacements"] == 0
+        mock_page.draw_rect.assert_not_called()
+
+    def test_redact_page_multiple_detections(self):
+        """Test redacting a page with multiple sensitive items."""
+        redactor = PDFRedactor()
+
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": [
+                {
+                    "type": 0,
+                    "lines": [
+                        {
+                            "spans": [
+                                {"text": "Balance: 1,000.00 Date: 01/01/2024", "bbox": (10, 10, 200, 30), "size": 12, "color": 0}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        stats = redactor.redact_page(mock_page)
+
+        assert stats["replacements"] == 2
+        assert stats["types"]["monetary_amount"] == 1
+        assert stats["types"]["date"] == 1
+
+    def test_redact_page_preserves_font_size(self):
+        """Test that font size is preserved during redaction."""
+        redactor = PDFRedactor()
+
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": [
+                {
+                    "type": 0,
+                    "lines": [
+                        {
+                            "spans": [
+                                {"text": "Amount: 9,999.99", "bbox": (10, 10, 100, 30), "size": 16, "color": 0}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        redactor.redact_page(mock_page)
+
+        # Verify insert_text was called with correct font size
+        call_kwargs = mock_page.insert_text.call_args[1]
+        assert call_kwargs["fontsize"] == 16
+
+    def test_redact_page_handles_color(self):
+        """Test that text color is preserved during redaction."""
+        redactor = PDFRedactor()
+
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": [
+                {
+                    "type": 0,
+                    "lines": [
+                        {
+                            "spans": [
+                                {"text": "Amount: 5,000.00", "bbox": (10, 10, 100, 30), "size": 12, "color": 255}  # Blue
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        redactor.redact_page(mock_page)
+
+        call_kwargs = mock_page.insert_text.call_args[1]
+        assert call_kwargs["color"] == (0.0, 0.0, 1.0)  # Blue
+
+    def test_redact_page_exception_handling(self):
+        """Test fallback when insert_text fails."""
+        redactor = PDFRedactor()
+
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": [
+                {
+                    "type": 0,
+                    "lines": [
+                        {
+                            "spans": [
+                                {"text": "Amount: 7,777.77", "bbox": (10, 10, 100, 30), "size": 12, "color": 0}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        # First call fails, second succeeds (fallback)
+        mock_page.insert_text.side_effect = [Exception("Font error"), None]
+
+        stats = redactor.redact_page(mock_page)
+
+        # Should still complete and fallback to default font
+        assert stats["replacements"] == 1
+        assert mock_page.insert_text.call_count == 2
+
+    def test_redact_page_missing_color_key(self):
+        """Test handling spans without color key."""
+        redactor = PDFRedactor()
+
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": [
+                {
+                    "type": 0,
+                    "lines": [
+                        {
+                            "spans": [
+                                {"text": "Amount: 3,333.33", "bbox": (10, 10, 100, 30), "size": 12}  # No color key
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        stats = redactor.redact_page(mock_page)
+
+        # Should use default black color
+        call_kwargs = mock_page.insert_text.call_args[1]
+        assert call_kwargs["color"] == (0, 0, 0)
+
+
+class TestRedactPdf:
+    """Test the redact_pdf method."""
+
+    @patch("pdf_redactor.fitz.open")
+    def test_redact_pdf_single_page(self, mock_fitz_open):
+        """Test redacting a single-page PDF."""
+        redactor = PDFRedactor()
+
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": [
+                {
+                    "type": 0,
+                    "lines": [
+                        {
+                            "spans": [
+                                {"text": "Amount: 1,234.56", "bbox": (10, 10, 100, 30), "size": 12, "color": 0}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        mock_doc = MagicMock()
+        mock_doc.__len__ = MagicMock(return_value=1)
+        mock_doc.__getitem__ = MagicMock(return_value=mock_page)
+        mock_fitz_open.return_value = mock_doc
+
+        stats = redactor.redact_pdf("input.pdf", "output.pdf")
+
+        assert stats["pages"] == 1
+        assert stats["total_replacements"] == 1
+        mock_doc.save.assert_called_once_with("output.pdf")
+        mock_doc.close.assert_called_once()
+
+    @patch("pdf_redactor.fitz.open")
+    def test_redact_pdf_multiple_pages(self, mock_fitz_open):
+        """Test redacting a multi-page PDF."""
+        redactor = PDFRedactor()
+
+        mock_pages = []
+        for i in range(3):
+            mock_page = MagicMock()
+            mock_page.get_text.return_value = {
+                "blocks": [
+                    {
+                        "type": 0,
+                        "lines": [
+                            {
+                                "spans": [
+                                    {"text": f"Amount: {i+1},000.00", "bbox": (10, 10, 100, 30), "size": 12, "color": 0}
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+            mock_pages.append(mock_page)
+
+        mock_doc = MagicMock()
+        mock_doc.__len__ = MagicMock(return_value=3)
+        mock_doc.__getitem__ = MagicMock(side_effect=mock_pages)
+        mock_fitz_open.return_value = mock_doc
+
+        stats = redactor.redact_pdf("input.pdf", "output.pdf")
+
+        assert stats["pages"] == 3
+        assert stats["total_replacements"] == 3
+
+    @patch("pdf_redactor.fitz.open")
+    def test_redact_pdf_no_sensitive_data(self, mock_fitz_open):
+        """Test redacting a PDF with no sensitive data."""
+        redactor = PDFRedactor()
+
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": [
+                {
+                    "type": 0,
+                    "lines": [
+                        {
+                            "spans": [
+                                {"text": "Just normal text", "bbox": (10, 10, 100, 30), "size": 12, "color": 0}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        mock_doc = MagicMock()
+        mock_doc.__len__ = MagicMock(return_value=1)
+        mock_doc.__getitem__ = MagicMock(return_value=mock_page)
+        mock_fitz_open.return_value = mock_doc
+
+        stats = redactor.redact_pdf("input.pdf", "output.pdf")
+
+        assert stats["total_replacements"] == 0
+
+    @patch("pdf_redactor.fitz.open")
+    def test_redact_pdf_aggregates_type_stats(self, mock_fitz_open):
+        """Test that type statistics are aggregated across pages."""
+        redactor = PDFRedactor()
+
+        mock_page1 = MagicMock()
+        mock_page1.get_text.return_value = {
+            "blocks": [{
+                "type": 0,
+                "lines": [{
+                    "spans": [{"text": "Amount: 1,000.00", "bbox": (0, 0, 100, 20), "size": 12, "color": 0}]
+                }]
+            }]
+        }
+
+        mock_page2 = MagicMock()
+        mock_page2.get_text.return_value = {
+            "blocks": [{
+                "type": 0,
+                "lines": [{
+                    "spans": [{"text": "Date: 01/01/2024", "bbox": (0, 0, 100, 20), "size": 12, "color": 0}]
+                }]
+            }]
+        }
+
+        mock_doc = MagicMock()
+        mock_doc.__len__ = MagicMock(return_value=2)
+        mock_doc.__getitem__ = MagicMock(side_effect=[mock_page1, mock_page2])
+        mock_fitz_open.return_value = mock_doc
+
+        stats = redactor.redact_pdf("input.pdf", "output.pdf")
+
+        assert stats["types"]["monetary_amount"] == 1
+        assert stats["types"]["date"] == 1
+        assert stats["total_replacements"] == 2
+
+
+class TestMain:
+    """Test the main CLI function."""
+
+    @patch("pdf_redactor.PDFRedactor")
+    def test_main_basic(self, mock_redactor_class):
+        """Test basic main function execution."""
+        mock_redactor = MagicMock()
+        mock_redactor_class.return_value = mock_redactor
+
+        with patch("sys.argv", ["pdf_redactor.py", "test.pdf"]):
+            main()
+
+        mock_redactor.redact_pdf.assert_called_once()
+        mock_redactor.save_mappings.assert_called_once()
+
+    @patch("pdf_redactor.PDFRedactor")
+    def test_main_with_output(self, mock_redactor_class):
+        """Test main with custom output path."""
+        mock_redactor = MagicMock()
+        mock_redactor_class.return_value = mock_redactor
+
+        with patch("sys.argv", ["pdf_redactor.py", "input.pdf", "-o", "custom_output.pdf"]):
+            main()
+
+        call_args = mock_redactor.redact_pdf.call_args[0]
+        assert call_args[0] == "input.pdf"
+        assert call_args[1] == "custom_output.pdf"
+
+    @patch("pdf_redactor.PDFRedactor")
+    def test_main_with_mapping_output(self, mock_redactor_class):
+        """Test main with custom mapping output path."""
+        mock_redactor = MagicMock()
+        mock_redactor_class.return_value = mock_redactor
+
+        with patch("sys.argv", ["pdf_redactor.py", "input.pdf", "--mapping-output", "custom_mappings.json"]):
+            main()
+
+        mock_redactor.save_mappings.assert_called_once_with("custom_mappings.json")
+
+    @patch("pdf_redactor.PDFRedactor")
+    def test_main_default_output_paths(self, mock_redactor_class):
+        """Test that default output paths are generated correctly."""
+        mock_redactor = MagicMock()
+        mock_redactor_class.return_value = mock_redactor
+
+        with patch("sys.argv", ["pdf_redactor.py", "document.pdf"]):
+            main()
+
+        # Default output should be redacted_document.pdf
+        call_args = mock_redactor.redact_pdf.call_args[0]
+        assert "redacted_document.pdf" in call_args[1]
+
+    @patch("pdf_redactor.PDFRedactor")
+    def test_main_with_preserve_dates_flag(self, mock_redactor_class):
+        """Test main with preserve-dates flag (currently unused)."""
+        mock_redactor = MagicMock()
+        mock_redactor_class.return_value = mock_redactor
+
+        # The --preserve-dates flag exists but isn't implemented
+        with patch("sys.argv", ["pdf_redactor.py", "input.pdf", "--preserve-dates"]):
+            main()
+
+        # Should still run without error
+        mock_redactor.redact_pdf.assert_called_once()

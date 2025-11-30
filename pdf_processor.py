@@ -13,7 +13,9 @@ Prerequisites:
 """
 
 import argparse
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 import fitz  # PyMuPDF
 import pdf2image
@@ -24,6 +26,24 @@ from transformers import pipeline
 
 # Constants
 MIN_TEXT_LENGTH = 50
+
+# Layout element types for document structure
+LAYOUT_TYPES = {
+    "header": {"fontsize_multiplier": 1.2, "align": 1},  # Centered, larger
+    "paragraph": {"fontsize_multiplier": 1.0, "align": 0},  # Left-aligned, normal
+    "table": {"fontsize_multiplier": 0.9, "align": 0},  # Left-aligned, slightly smaller
+    "footer": {"fontsize_multiplier": 0.8, "align": 1},  # Centered, smaller
+}
+
+
+@dataclass
+class LayoutRegion:
+    """Represents a detected layout region in a document."""
+
+    region_type: str  # header, paragraph, table, footer
+    text: str
+    confidence: float
+    bbox: Optional[tuple] = None  # (x0, y0, x1, y1) if available
 
 
 class PDFProcessor:
@@ -53,10 +73,12 @@ class PDFProcessor:
         )
 
         if self.use_layout:
-            print("Loading layout model (LayoutLMv3)...")
+            print("Loading layout model (DiT for document classification)...")
+            # Use DiT (Document Image Transformer) for document structure classification
+            # This is more suitable for layout analysis than document-question-answering
             self.layout_pipe = pipeline(
-                "document-question-answering",
-                model="microsoft/layoutlmv3-base",
+                "image-classification",
+                model="microsoft/dit-base-finetuned-rvlcdip",
                 device=0 if torch.cuda.is_available() else -1,
             )
 
@@ -98,10 +120,91 @@ class PDFProcessor:
         print(f"Rasterizing PDF at {dpi} DPI...")
         return pdf2image.convert_from_path(pdf_path, dpi=dpi)
 
+    def analyze_layout(self, image):
+        """
+        Analyze document layout to determine document type and structure.
+
+        Args:
+            image: PIL Image of the document page
+
+        Returns:
+            LayoutRegion with detected document type and confidence
+        """
+        if not self.layout_pipe:
+            return LayoutRegion(
+                region_type="paragraph",
+                text="",
+                confidence=1.0,
+            )
+
+        try:
+            # Classify document type using DiT
+            results = self.layout_pipe(image)
+
+            if results and len(results) > 0:
+                # Get top prediction
+                top_result = results[0]
+                label = top_result.get("label", "unknown").lower()
+                confidence = top_result.get("score", 0.0)
+
+                # Map RVL-CDIP labels to our layout types
+                # RVL-CDIP classes: letter, form, email, handwritten, advertisement,
+                # scientific_report, scientific_publication, specification, file_folder,
+                # news_article, budget, invoice, presentation, questionnaire, resume, memo
+                layout_mapping = {
+                    "letter": "paragraph",
+                    "form": "table",
+                    "email": "paragraph",
+                    "handwritten": "paragraph",
+                    "advertisement": "header",
+                    "scientific_report": "paragraph",
+                    "scientific_publication": "paragraph",
+                    "specification": "table",
+                    "file_folder": "paragraph",
+                    "news_article": "paragraph",
+                    "budget": "table",
+                    "invoice": "table",
+                    "presentation": "header",
+                    "questionnaire": "table",
+                    "resume": "paragraph",
+                    "memo": "paragraph",
+                }
+
+                region_type = layout_mapping.get(label, "paragraph")
+
+                return LayoutRegion(
+                    region_type=region_type,
+                    text=label,  # Store original label for reference
+                    confidence=confidence,
+                )
+            else:
+                return LayoutRegion(
+                    region_type="paragraph",
+                    text="",
+                    confidence=0.0,
+                )
+
+        except Exception as e:
+            print(f"Warning: Layout analysis failed: {e}")
+            return LayoutRegion(
+                region_type="paragraph",
+                text="",
+                confidence=0.0,
+            )
+
     def extract_text_from_images(self, images):
-        """Extract text from rasterized PDF images using OCR."""
+        """
+        Extract text from rasterized PDF images using OCR.
+
+        Args:
+            images: List of PIL Images (rasterized PDF pages)
+
+        Returns:
+            List of tuples: (text, layout_region) for each page
+            If use_layout is False, layout_region will be None
+        """
         print("Extracting text with OCR...")
-        page_texts = []
+        page_data = []
 
         for page_img in tqdm(images, desc="OCR Processing"):
             # OCR
@@ -113,30 +216,59 @@ class PDFProcessor:
             else:
                 text = ""
 
-            # Optional: Layout analysis
+            # Layout analysis if enabled
+            layout_region = None
             if self.use_layout and text:
-                # Layout analysis can be added here for table detection
-                pass
+                layout_region = self.analyze_layout(page_img)
+                if layout_region.confidence > 0.5:
+                    print(
+                        f"  Detected document type: {layout_region.text} "
+                        f"(confidence: {layout_region.confidence:.2f})"
+                    )
 
-            page_texts.append(text)
+            page_data.append((text, layout_region))
 
-        return page_texts
+        # For backward compatibility, extract just text if layout not used
+        if not self.use_layout:
+            return [text for text, _ in page_data]
 
-    def manipulate_text(self, page_texts, operation="summarize"):
+        return page_data
+
+    def manipulate_text(self, page_data, operation="summarize"):
         """
         Apply text manipulation (summarization or rewriting).
 
         Args:
-            page_texts: List of text strings from each page
+            page_data: List of text strings OR list of (text, layout_region) tuples
             operation: "summarize" or "rewrite"
+
+        Returns:
+            List of (manipulated_text, layout_region) tuples if layout enabled,
+            otherwise list of text strings
         """
         print(f"Performing text {operation}...")
-        manipulated_texts = []
+        manipulated_data = []
 
-        for text_content in tqdm(page_texts, desc=f"Text {operation}"):
+        # Handle both formats: plain text list or (text, layout) tuples
+        has_layout = (
+            isinstance(page_data, list)
+            and len(page_data) > 0
+            and isinstance(page_data[0], tuple)
+        )
+
+        for item in tqdm(page_data, desc=f"Text {operation}"):
+            if has_layout:
+                text_content, layout_region = item
+            else:
+                text_content = item
+                layout_region = None
+
             if not text_content or len(text_content.strip()) < MIN_TEXT_LENGTH:
                 # Skip empty or very short text
-                manipulated_texts.append(text_content)
+                if has_layout:
+                    manipulated_data.append((text_content, layout_region))
+                else:
+                    manipulated_data.append(text_content)
                 continue
 
             try:
@@ -146,16 +278,29 @@ class PDFProcessor:
                     text_content[:max_input_length]
                     if len(text_content) > max_input_length
                     else text_content
-                )  # Format prompt for instruction-following models
+                )
+
+                # Customize prompt based on layout type if available
+                layout_context = ""
+                if layout_region and layout_region.confidence > 0.5:
+                    doc_type = layout_region.text
+                    if doc_type in ("invoice", "budget", "form"):
+                        layout_context = " This is a structured document with tabular data."
+                    elif doc_type in ("letter", "email", "memo"):
+                        layout_context = " This is correspondence/communication."
+                    elif doc_type in ("scientific_report", "scientific_publication"):
+                        layout_context = " This is a scientific/technical document."
+
+                # Format prompt for instruction-following models
                 if operation == "summarize":
                     prompt = (
                         f"<s>[INST] Summarize the following text concisely "
-                        f"while preserving key information:\n\n{truncated_text}\n\n[/INST]"
+                        f"while preserving key information.{layout_context}\n\n{truncated_text}\n\n[/INST]"
                     )
                 else:
                     prompt = (
                         f"<s>[INST] Rewrite the following text to improve "
-                        f"clarity and readability:\n\n{truncated_text}\n\n[/INST]"
+                        f"clarity and readability.{layout_context}\n\n{truncated_text}\n\n[/INST]"
                     )
 
                 model_result = self.summariser(prompt)
@@ -168,34 +313,71 @@ class PDFProcessor:
                 else:
                     processed_text = text_content
 
-                manipulated_texts.append(processed_text)
+                if has_layout:
+                    manipulated_data.append((processed_text, layout_region))
+                else:
+                    manipulated_data.append(processed_text)
+
             except Exception as e:
                 print(f"Warning: Failed to process text: {e}")
-                manipulated_texts.append(text_content)
+                if has_layout:
+                    manipulated_data.append((text_content, layout_region))
+                else:
+                    manipulated_data.append(text_content)
 
-        return manipulated_texts
+        return manipulated_data
 
-    def reinsert_text(self, document, manipulated_texts, fontsize=12):
-        """Re-insert modified text back into PDF pages."""
+    def reinsert_text(self, document, manipulated_data, fontsize=12):
+        """
+        Re-insert modified text back into PDF pages.
+
+        Args:
+            document: PyMuPDF document object
+            manipulated_data: List of text strings OR list of (text, layout_region) tuples
+            fontsize: Base font size (will be adjusted based on layout type)
+        """
         print("Re-inserting text into PDF...")
 
-        for page_index, modified_text in enumerate(tqdm(manipulated_texts, desc="Inserting text")):
+        # Handle both formats: plain text list or (text, layout) tuples
+        has_layout = (
+            isinstance(manipulated_data, list)
+            and len(manipulated_data) > 0
+            and isinstance(manipulated_data[0], tuple)
+        )
+
+        for page_index, item in enumerate(tqdm(manipulated_data, desc="Inserting text")):
             if page_index >= len(document):
                 break
+
+            if has_layout:
+                modified_text, layout_region = item
+            else:
+                modified_text = item
+                layout_region = None
 
             page = document[page_index]
 
             # Clear existing text before inserting new text
             page.clean_contents()
 
-            # Insert new text - simple overlay at top left
-            # Adjust (x, y) coordinates for your layout needs
+            # Determine formatting based on layout analysis
+            if layout_region and layout_region.confidence > 0.5:
+                layout_type = layout_region.region_type
+                layout_config = LAYOUT_TYPES.get(layout_type, LAYOUT_TYPES["paragraph"])
+
+                adjusted_fontsize = fontsize * layout_config["fontsize_multiplier"]
+                align = layout_config["align"]
+            else:
+                adjusted_fontsize = fontsize
+                align = 0  # Left-aligned by default
+
+            # Insert new text with layout-aware formatting
             page.insert_textbox(
                 fitz.Rect(72, 72, page.rect.width - 72, page.rect.height - 72),
                 modified_text,
-                fontsize=fontsize,
+                fontsize=adjusted_fontsize,
                 color=(0, 0, 0),
-                align=0,
+                align=align,
             )
 
     def process_pdf(self, input_path, output_path, operation="summarize", dpi=300):
