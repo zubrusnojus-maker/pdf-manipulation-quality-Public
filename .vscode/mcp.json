@@ -1,15 +1,12 @@
 {
   "servers": {
     "task-master-ai": {
+      "type": "stdio",
       "command": "npx",
       "args": ["-y", "task-master-ai"],
       "env": {
-        "TASK_MASTER_TOOLS": "standard",
-        "OLLAMA_BASE_URL": "http://localhost:11434",
-        "PROJECT_ROOT": "${workspaceFolder}",
-        "DEBUG": "false"
-      },
-      "type": "stdio"
+        "OLLAMA_BASE_URL": "http://localhost:11434"
+      }
     }
   }
 }
