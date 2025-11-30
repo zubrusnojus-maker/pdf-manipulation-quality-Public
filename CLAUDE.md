@@ -80,6 +80,16 @@ src/pdf_toolkit/
 
 **Backwards compatibility**: The root-level `pdf_processor.py` and `pdf_redactor.py` files are thin wrappers that re-export from the package, so existing scripts continue to work.
 
+### Sample Files Directory
+
+```
+samples/
+├── input/      # Original PDF files to process
+└── output/     # Processed/redacted PDF outputs
+```
+
+The `samples/` directory is gitignored to keep the repository lightweight.
+
 ### Processing Pipeline
 
 1. **Rasterization** - PDF to images via `pdf2image` (300 DPI default)
