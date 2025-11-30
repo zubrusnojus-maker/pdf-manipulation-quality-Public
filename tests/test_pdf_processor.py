@@ -1,10 +1,11 @@
 """Tests for PDF processing functionality."""
 
 from unittest.mock import MagicMock, patch
+
 import pytest
 from pdf_processor import (
-    MIN_TEXT_LENGTH,
     LAYOUT_TYPES,
+    MIN_TEXT_LENGTH,
     LayoutRegion,
     PDFProcessor,
     post_process_with_pikepdf,
@@ -52,8 +53,8 @@ def test_layout_parameter(use_layout):
 class TestLoadModels:
     """Test model loading with mocked pipelines."""
 
-    @patch("pdf_processor.pipeline")
-    @patch("pdf_processor.torch.cuda.is_available", return_value=False)
+    @patch("pdf_toolkit.models.loader.pipeline")
+    @patch("pdf_toolkit.models.loader.torch.cuda.is_available", return_value=False)
     def test_load_models_small_cpu(self, mock_cuda, mock_pipeline):
         """Test loading small model on CPU."""
         mock_pipeline.return_value = MagicMock()
@@ -70,8 +71,8 @@ class TestLoadModels:
             device=-1,
         )
 
-    @patch("pdf_processor.pipeline")
-    @patch("pdf_processor.torch.cuda.is_available", return_value=True)
+    @patch("pdf_toolkit.models.loader.pipeline")
+    @patch("pdf_toolkit.models.loader.torch.cuda.is_available", return_value=True)
     def test_load_models_large_gpu(self, mock_cuda, mock_pipeline):
         """Test loading large model on GPU."""
         mock_pipeline.return_value = MagicMock()
@@ -81,8 +82,8 @@ class TestLoadModels:
         assert processor.ocr_pipe is not None
         assert processor.summariser is not None
 
-    @patch("pdf_processor.pipeline")
-    @patch("pdf_processor.torch.cuda.is_available", return_value=False)
+    @patch("pdf_toolkit.models.loader.pipeline")
+    @patch("pdf_toolkit.models.loader.torch.cuda.is_available", return_value=False)
     def test_load_models_with_layout(self, mock_cuda, mock_pipeline):
         """Test loading models with layout analysis enabled."""
         mock_pipeline.return_value = MagicMock()
@@ -97,7 +98,7 @@ class TestLoadModels:
 class TestLoadPDF:
     """Test PDF loading functionality."""
 
-    @patch("pdf_processor.fitz.open")
+    @patch("pdf_toolkit.core.processor.fitz.open")
     def test_load_pdf(self, mock_fitz_open):
         """Test PDF loading."""
         mock_doc = MagicMock()
@@ -113,26 +114,30 @@ class TestLoadPDF:
 class TestRasterizePDF:
     """Test PDF rasterization."""
 
-    @patch("pdf_processor.pdf2image.convert_from_path")
+    @patch("pdf_toolkit.utils.pdf_utils.pdf2image.convert_from_path")
     def test_rasterize_pdf_default_dpi(self, mock_convert):
         """Test rasterization with default DPI."""
         mock_images = [MagicMock(), MagicMock()]
         mock_convert.return_value = mock_images
 
         processor = PDFProcessor()
-        result = processor.rasterize_pdf("test.pdf")
+        # Use the module-level function, not the method
+        from pdf_toolkit.utils.pdf_utils import rasterize_pdf
+
+        result = rasterize_pdf("test.pdf")
 
         mock_convert.assert_called_once_with("test.pdf", dpi=300)
         assert result == mock_images
 
-    @patch("pdf_processor.pdf2image.convert_from_path")
+    @patch("pdf_toolkit.utils.pdf_utils.pdf2image.convert_from_path")
     def test_rasterize_pdf_custom_dpi(self, mock_convert):
         """Test rasterization with custom DPI."""
         mock_images = [MagicMock()]
         mock_convert.return_value = mock_images
 
-        processor = PDFProcessor()
-        result = processor.rasterize_pdf("test.pdf", dpi=600)
+        from pdf_toolkit.utils.pdf_utils import rasterize_pdf
+
+        result = rasterize_pdf("test.pdf", dpi=600)
 
         mock_convert.assert_called_once_with("test.pdf", dpi=600)
 
@@ -189,9 +194,7 @@ class TestExtractTextFromImages:
         """Test extraction with layout analysis enabled."""
         processor = PDFProcessor(use_layout=True)
         processor.ocr_pipe = MagicMock(return_value=[{"generated_text": "Text content"}])
-        processor.layout_pipe = MagicMock(
-            return_value=[{"label": "letter", "score": 0.95}]
-        )
+        processor.layout_pipe = MagicMock(return_value=[{"label": "letter", "score": 0.95}])
 
         result = processor.extract_text_from_images([MagicMock()])
 
@@ -262,9 +265,7 @@ class TestAnalyzeLayout:
     def test_analyze_layout_invoice(self):
         """Test analyze_layout detects invoice as table."""
         processor = PDFProcessor(use_layout=True)
-        processor.layout_pipe = MagicMock(
-            return_value=[{"label": "invoice", "score": 0.92}]
-        )
+        processor.layout_pipe = MagicMock(return_value=[{"label": "invoice", "score": 0.92}])
 
         result = processor.analyze_layout(MagicMock())
 
@@ -275,9 +276,7 @@ class TestAnalyzeLayout:
     def test_analyze_layout_letter(self):
         """Test analyze_layout detects letter as paragraph."""
         processor = PDFProcessor(use_layout=True)
-        processor.layout_pipe = MagicMock(
-            return_value=[{"label": "letter", "score": 0.88}]
-        )
+        processor.layout_pipe = MagicMock(return_value=[{"label": "letter", "score": 0.88}])
 
         result = processor.analyze_layout(MagicMock())
 
@@ -287,9 +286,7 @@ class TestAnalyzeLayout:
     def test_analyze_layout_presentation(self):
         """Test analyze_layout detects presentation as header."""
         processor = PDFProcessor(use_layout=True)
-        processor.layout_pipe = MagicMock(
-            return_value=[{"label": "presentation", "score": 0.75}]
-        )
+        processor.layout_pipe = MagicMock(return_value=[{"label": "presentation", "score": 0.75}])
 
         result = processor.analyze_layout(MagicMock())
 
@@ -318,9 +315,7 @@ class TestAnalyzeLayout:
     def test_analyze_layout_unknown_label(self):
         """Test analyze_layout with unknown document type."""
         processor = PDFProcessor(use_layout=True)
-        processor.layout_pipe = MagicMock(
-            return_value=[{"label": "unknown_type", "score": 0.5}]
-        )
+        processor.layout_pipe = MagicMock(return_value=[{"label": "unknown_type", "score": 0.5}])
 
         result = processor.analyze_layout(MagicMock())
 
@@ -461,9 +456,7 @@ class TestManipulateText:
     def test_manipulate_text_with_layout_context_invoice(self):
         """Test that invoice layout adds context to prompt."""
         processor = PDFProcessor(model_size="small")
-        processor.summariser = MagicMock(
-            return_value=[{"generated_text": "[/INST] Summary"}]
-        )
+        processor.summariser = MagicMock(return_value=[{"generated_text": "[/INST] Summary"}])
 
         layout_region = LayoutRegion(
             region_type="table",
@@ -480,9 +473,7 @@ class TestManipulateText:
     def test_manipulate_text_with_layout_context_letter(self):
         """Test that letter layout adds context to prompt."""
         processor = PDFProcessor(model_size="small")
-        processor.summariser = MagicMock(
-            return_value=[{"generated_text": "[/INST] Summary"}]
-        )
+        processor.summariser = MagicMock(return_value=[{"generated_text": "[/INST] Summary"}])
 
         layout_region = LayoutRegion(
             region_type="paragraph",
@@ -498,9 +489,7 @@ class TestManipulateText:
     def test_manipulate_text_with_low_confidence_layout(self):
         """Test that low confidence layout doesn't add context."""
         processor = PDFProcessor(model_size="small")
-        processor.summariser = MagicMock(
-            return_value=[{"generated_text": "[/INST] Summary"}]
-        )
+        processor.summariser = MagicMock(return_value=[{"generated_text": "[/INST] Summary"}])
 
         layout_region = LayoutRegion(
             region_type="table",
@@ -689,23 +678,19 @@ class TestReinsertText:
 class TestProcessPDF:
     """Test the complete PDF processing pipeline."""
 
-    @patch("pdf_processor.fitz.open")
-    @patch("pdf_processor.pdf2image.convert_from_path")
-    @patch("pdf_processor.pipeline")
-    @patch("pdf_processor.torch.cuda.is_available", return_value=False)
-    def test_process_pdf_full_pipeline(
-        self, mock_cuda, mock_pipeline, mock_convert, mock_fitz
-    ):
+    @patch("pdf_toolkit.core.processor.fitz.open")
+    @patch("pdf_toolkit.core.processor.rasterize_pdf")
+    @patch("pdf_toolkit.models.loader.pipeline")
+    @patch("pdf_toolkit.models.loader.torch.cuda.is_available", return_value=False)
+    def test_process_pdf_full_pipeline(self, mock_cuda, mock_pipeline, mock_rasterize, mock_fitz):
         """Test the full processing pipeline."""
         # Setup mocks
         mock_ocr = MagicMock(return_value=[{"generated_text": "A" * 100}])
-        mock_summarizer = MagicMock(
-            return_value=[{"generated_text": "[/INST] Summary text"}]
-        )
+        mock_summarizer = MagicMock(return_value=[{"generated_text": "[/INST] Summary text"}])
         mock_pipeline.side_effect = [mock_ocr, mock_summarizer]
 
         mock_image = MagicMock()
-        mock_convert.return_value = [mock_image]
+        mock_rasterize.return_value = [mock_image]
 
         mock_page = MagicMock()
         mock_page.rect.width = 612
@@ -722,18 +707,18 @@ class TestProcessPDF:
         # Verify
         assert result == "output.pdf"
         mock_fitz.assert_called_with("input.pdf")
-        mock_convert.assert_called_once()
+        mock_rasterize.assert_called_once()
         mock_doc.save.assert_called_once_with("output.pdf")
         mock_doc.close.assert_called_once()
 
-    @patch("pdf_processor.fitz.open")
-    @patch("pdf_processor.pdf2image.convert_from_path")
-    def test_process_pdf_skips_model_loading_if_loaded(self, mock_convert, mock_fitz):
+    @patch("pdf_toolkit.core.processor.fitz.open")
+    @patch("pdf_toolkit.core.processor.rasterize_pdf")
+    def test_process_pdf_skips_model_loading_if_loaded(self, mock_rasterize, mock_fitz):
         """Test that models aren't reloaded if already loaded."""
         mock_doc = MagicMock()
         mock_doc.__len__ = MagicMock(return_value=0)
         mock_fitz.return_value = mock_doc
-        mock_convert.return_value = []
+        mock_rasterize.return_value = []
 
         processor = PDFProcessor()
         processor.summariser = MagicMock()  # Pre-loaded
@@ -747,10 +732,12 @@ class TestProcessPDF:
 class TestPostProcessWithPikepdf:
     """Test pikepdf post-processing."""
 
-    @patch("pdf_processor.pikepdf.Pdf.open")
-    @patch("pdf_processor.pikepdf.Pdf.new")
+    @patch("pdf_toolkit.utils.pdf_utils.pikepdf.Pdf.open")
+    @patch("pdf_toolkit.utils.pdf_utils.pikepdf.Pdf.new")
     def test_post_process_with_pikepdf(self, mock_new, mock_open):
         """Test PDF optimization with pikepdf."""
+        from pdf_toolkit.utils.pdf_utils import optimize_pdf
+
         mock_source = MagicMock()
         mock_source.pages = [MagicMock(), MagicMock()]
         mock_open.return_value = mock_source
@@ -759,7 +746,7 @@ class TestPostProcessWithPikepdf:
         mock_dest.pages = MagicMock()
         mock_new.return_value = mock_dest
 
-        post_process_with_pikepdf("input.pdf", "output.pdf")
+        optimize_pdf("input.pdf", "output.pdf")
 
         mock_open.assert_called_once_with("input.pdf")
         mock_dest.save.assert_called_once_with("output.pdf")
@@ -769,11 +756,11 @@ class TestPostProcessWithPikepdf:
 class TestMainFunction:
     """Test the CLI main function."""
 
-    @patch("pdf_processor.PDFProcessor")
-    @patch("pdf_processor.post_process_with_pikepdf")
+    @patch("pdf_toolkit.cli.processor_cli.PDFProcessor")
+    @patch("pdf_toolkit.cli.processor_cli.optimize_pdf")
     def test_main_basic(self, mock_post_process, mock_processor_class):
         """Test basic main function execution."""
-        from pdf_processor import main
+        from pdf_toolkit.cli.processor_cli import main
 
         mock_processor = MagicMock()
         mock_processor.process_pdf.return_value = "output.pdf"
@@ -786,11 +773,11 @@ class TestMainFunction:
         mock_processor.process_pdf.assert_called_once()
         mock_post_process.assert_not_called()
 
-    @patch("pdf_processor.PDFProcessor")
-    @patch("pdf_processor.post_process_with_pikepdf")
+    @patch("pdf_toolkit.cli.processor_cli.PDFProcessor")
+    @patch("pdf_toolkit.cli.processor_cli.optimize_pdf")
     def test_main_with_optimize(self, mock_post_process, mock_processor_class):
         """Test main function with optimization flag."""
-        from pdf_processor import main
+        from pdf_toolkit.cli.processor_cli import main
 
         mock_processor = MagicMock()
         mock_processor.process_pdf.return_value = "output.pdf"
@@ -801,10 +788,10 @@ class TestMainFunction:
 
         mock_post_process.assert_called_once()
 
-    @patch("pdf_processor.PDFProcessor")
+    @patch("pdf_toolkit.cli.processor_cli.PDFProcessor")
     def test_main_with_all_options(self, mock_processor_class):
         """Test main function with all CLI options."""
-        from pdf_processor import main
+        from pdf_toolkit.cli.processor_cli import main
 
         mock_processor = MagicMock()
         mock_processor.process_pdf.return_value = "custom_output.pdf"

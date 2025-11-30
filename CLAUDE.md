@@ -36,11 +36,49 @@ python pdf_redactor.py input.pdf -o output.pdf --mapping-output mappings.json
 ```bash
 pip install -r requirements.txt       # Core dependencies
 pip install -r requirements-test.txt  # Test dependencies (pytest, requests, numpy)
+
+# Or install as a package
+pip install -e .
 ```
 
 System requirement: `poppler-utils` for pdf2image rasterization.
 
+### Installed CLI Commands
+After `pip install -e .`, these commands are available:
+```bash
+pdf-process input.pdf -o output.pdf   # Process PDF with OCR
+pdf-redact input.pdf -o output.pdf    # Anonymize PDF data
+```
+
 ## Architecture
+
+### Package Structure
+
+```
+src/pdf_toolkit/
+├── __init__.py           # Package exports: PDFProcessor, PDFRedactor, LayoutRegion
+├── core/
+│   ├── __init__.py
+│   ├── processor.py      # PDFProcessor class - main processing logic
+│   ├── layout.py         # LayoutRegion, LAYOUT_TYPES, DOCUMENT_TYPE_MAPPING
+│   └── constants.py      # MIN_TEXT_LENGTH, MODELS, MARGIN_POINTS
+├── models/
+│   ├── __init__.py
+│   └── loader.py         # ModelLoader class for loading TrOCR, DiT, Mistral/Llama
+├── redaction/
+│   ├── __init__.py
+│   ├── redactor.py       # PDFRedactor class for data anonymization
+│   └── patterns.py       # REDACTION_PATTERNS for sensitive data detection
+├── utils/
+│   ├── __init__.py
+│   └── pdf_utils.py      # rasterize_pdf(), optimize_pdf()
+└── cli/
+    ├── __init__.py
+    ├── processor_cli.py  # CLI entry point for pdf-process
+    └── redactor_cli.py   # CLI entry point for pdf-redact
+```
+
+**Backwards compatibility**: The root-level `pdf_processor.py` and `pdf_redactor.py` files are thin wrappers that re-export from the package, so existing scripts continue to work.
 
 ### Processing Pipeline
 
@@ -69,9 +107,12 @@ When `--use-layout` is enabled, the processor:
 
 | File | Purpose |
 |------|---------|
-| `pdf_processor.py` | Main class-based implementation with CLI |
+| `src/pdf_toolkit/core/processor.py` | PDFProcessor class with OCR and text manipulation |
+| `src/pdf_toolkit/redaction/redactor.py` | PDFRedactor for data anonymization |
+| `src/pdf_toolkit/models/loader.py` | ModelLoader for managing ML models |
+| `pdf_processor.py` | Backwards-compatible wrapper with CLI |
+| `pdf_redactor.py` | Backwards-compatible wrapper with CLI |
 | `quick_pdf_process.py` | Single-script one-liner for simple use cases |
-| `pdf_redactor.py` | PDF data anonymization/redaction tool |
 
 ### Quality Tiers
 

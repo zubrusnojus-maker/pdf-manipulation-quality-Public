@@ -3,8 +3,6 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from pdf_redactor import PDFRedactor, main
 
 
@@ -317,9 +315,9 @@ class TestIntToRgb:
         redactor = PDFRedactor()
         # RGB(128, 64, 32) = 0x804020 = 8405024
         result = redactor._int_to_rgb(8405024)
-        assert abs(result[0] - 128/255) < 0.01
-        assert abs(result[1] - 64/255) < 0.01
-        assert abs(result[2] - 32/255) < 0.01
+        assert abs(result[0] - 128 / 255) < 0.01
+        assert abs(result[1] - 64 / 255) < 0.01
+        assert abs(result[2] - 32 / 255) < 0.01
 
 
 class TestRedactPage:
@@ -337,10 +335,15 @@ class TestRedactPage:
                     "lines": [
                         {
                             "spans": [
-                                {"text": "Normal text without sensitive data", "bbox": (0, 0, 100, 20), "size": 12, "color": 0}
+                                {
+                                    "text": "Normal text without sensitive data",
+                                    "bbox": (0, 0, 100, 20),
+                                    "size": 12,
+                                    "color": 0,
+                                }
                             ]
                         }
-                    ]
+                    ],
                 }
             ]
         }
@@ -363,10 +366,15 @@ class TestRedactPage:
                     "lines": [
                         {
                             "spans": [
-                                {"text": "Amount: 1,234.56", "bbox": (10, 10, 100, 30), "size": 12, "color": 0}
+                                {
+                                    "text": "Amount: 1,234.56",
+                                    "bbox": (10, 10, 100, 30),
+                                    "size": 12,
+                                    "color": 0,
+                                }
                             ]
                         }
-                    ]
+                    ],
                 }
             ]
         }
@@ -387,7 +395,7 @@ class TestRedactPage:
             "blocks": [
                 {
                     "type": 1,  # Image block
-                    "lines": []
+                    "lines": [],
                 }
             ]
         }
@@ -409,10 +417,15 @@ class TestRedactPage:
                     "lines": [
                         {
                             "spans": [
-                                {"text": "Balance: 1,000.00 Date: 01/01/2024", "bbox": (10, 10, 200, 30), "size": 12, "color": 0}
+                                {
+                                    "text": "Balance: 1,000.00 Date: 01/01/2024",
+                                    "bbox": (10, 10, 200, 30),
+                                    "size": 12,
+                                    "color": 0,
+                                }
                             ]
                         }
-                    ]
+                    ],
                 }
             ]
         }
@@ -435,10 +448,15 @@ class TestRedactPage:
                     "lines": [
                         {
                             "spans": [
-                                {"text": "Amount: 9,999.99", "bbox": (10, 10, 100, 30), "size": 16, "color": 0}
+                                {
+                                    "text": "Amount: 9,999.99",
+                                    "bbox": (10, 10, 100, 30),
+                                    "size": 16,
+                                    "color": 0,
+                                }
                             ]
                         }
-                    ]
+                    ],
                 }
             ]
         }
@@ -461,10 +479,15 @@ class TestRedactPage:
                     "lines": [
                         {
                             "spans": [
-                                {"text": "Amount: 5,000.00", "bbox": (10, 10, 100, 30), "size": 12, "color": 255}  # Blue
+                                {
+                                    "text": "Amount: 5,000.00",
+                                    "bbox": (10, 10, 100, 30),
+                                    "size": 12,
+                                    "color": 255,
+                                }  # Blue
                             ]
                         }
-                    ]
+                    ],
                 }
             ]
         }
@@ -486,10 +509,15 @@ class TestRedactPage:
                     "lines": [
                         {
                             "spans": [
-                                {"text": "Amount: 7,777.77", "bbox": (10, 10, 100, 30), "size": 12, "color": 0}
+                                {
+                                    "text": "Amount: 7,777.77",
+                                    "bbox": (10, 10, 100, 30),
+                                    "size": 12,
+                                    "color": 0,
+                                }
                             ]
                         }
-                    ]
+                    ],
                 }
             ]
         }
@@ -514,10 +542,14 @@ class TestRedactPage:
                     "lines": [
                         {
                             "spans": [
-                                {"text": "Amount: 3,333.33", "bbox": (10, 10, 100, 30), "size": 12}  # No color key
+                                {
+                                    "text": "Amount: 3,333.33",
+                                    "bbox": (10, 10, 100, 30),
+                                    "size": 12,
+                                }  # No color key
                             ]
                         }
-                    ]
+                    ],
                 }
             ]
         }
@@ -532,7 +564,7 @@ class TestRedactPage:
 class TestRedactPdf:
     """Test the redact_pdf method."""
 
-    @patch("pdf_redactor.fitz.open")
+    @patch("pdf_toolkit.redaction.redactor.fitz.open")
     def test_redact_pdf_single_page(self, mock_fitz_open):
         """Test redacting a single-page PDF."""
         redactor = PDFRedactor()
@@ -545,10 +577,15 @@ class TestRedactPdf:
                     "lines": [
                         {
                             "spans": [
-                                {"text": "Amount: 1,234.56", "bbox": (10, 10, 100, 30), "size": 12, "color": 0}
+                                {
+                                    "text": "Amount: 1,234.56",
+                                    "bbox": (10, 10, 100, 30),
+                                    "size": 12,
+                                    "color": 0,
+                                }
                             ]
                         }
-                    ]
+                    ],
                 }
             ]
         }
@@ -565,7 +602,7 @@ class TestRedactPdf:
         mock_doc.save.assert_called_once_with("output.pdf")
         mock_doc.close.assert_called_once()
 
-    @patch("pdf_redactor.fitz.open")
+    @patch("pdf_toolkit.redaction.redactor.fitz.open")
     def test_redact_pdf_multiple_pages(self, mock_fitz_open):
         """Test redacting a multi-page PDF."""
         redactor = PDFRedactor()
@@ -580,10 +617,15 @@ class TestRedactPdf:
                         "lines": [
                             {
                                 "spans": [
-                                    {"text": f"Amount: {i+1},000.00", "bbox": (10, 10, 100, 30), "size": 12, "color": 0}
+                                    {
+                                        "text": f"Amount: {i + 1},000.00",
+                                        "bbox": (10, 10, 100, 30),
+                                        "size": 12,
+                                        "color": 0,
+                                    }
                                 ]
                             }
-                        ]
+                        ],
                     }
                 ]
             }
@@ -599,7 +641,7 @@ class TestRedactPdf:
         assert stats["pages"] == 3
         assert stats["total_replacements"] == 3
 
-    @patch("pdf_redactor.fitz.open")
+    @patch("pdf_toolkit.redaction.redactor.fitz.open")
     def test_redact_pdf_no_sensitive_data(self, mock_fitz_open):
         """Test redacting a PDF with no sensitive data."""
         redactor = PDFRedactor()
@@ -612,10 +654,15 @@ class TestRedactPdf:
                     "lines": [
                         {
                             "spans": [
-                                {"text": "Just normal text", "bbox": (10, 10, 100, 30), "size": 12, "color": 0}
+                                {
+                                    "text": "Just normal text",
+                                    "bbox": (10, 10, 100, 30),
+                                    "size": 12,
+                                    "color": 0,
+                                }
                             ]
                         }
-                    ]
+                    ],
                 }
             ]
         }
@@ -629,29 +676,51 @@ class TestRedactPdf:
 
         assert stats["total_replacements"] == 0
 
-    @patch("pdf_redactor.fitz.open")
+    @patch("pdf_toolkit.redaction.redactor.fitz.open")
     def test_redact_pdf_aggregates_type_stats(self, mock_fitz_open):
         """Test that type statistics are aggregated across pages."""
         redactor = PDFRedactor()
 
         mock_page1 = MagicMock()
         mock_page1.get_text.return_value = {
-            "blocks": [{
-                "type": 0,
-                "lines": [{
-                    "spans": [{"text": "Amount: 1,000.00", "bbox": (0, 0, 100, 20), "size": 12, "color": 0}]
-                }]
-            }]
+            "blocks": [
+                {
+                    "type": 0,
+                    "lines": [
+                        {
+                            "spans": [
+                                {
+                                    "text": "Amount: 1,000.00",
+                                    "bbox": (0, 0, 100, 20),
+                                    "size": 12,
+                                    "color": 0,
+                                }
+                            ]
+                        }
+                    ],
+                }
+            ]
         }
 
         mock_page2 = MagicMock()
         mock_page2.get_text.return_value = {
-            "blocks": [{
-                "type": 0,
-                "lines": [{
-                    "spans": [{"text": "Date: 01/01/2024", "bbox": (0, 0, 100, 20), "size": 12, "color": 0}]
-                }]
-            }]
+            "blocks": [
+                {
+                    "type": 0,
+                    "lines": [
+                        {
+                            "spans": [
+                                {
+                                    "text": "Date: 01/01/2024",
+                                    "bbox": (0, 0, 100, 20),
+                                    "size": 12,
+                                    "color": 0,
+                                }
+                            ]
+                        }
+                    ],
+                }
+            ]
         }
 
         mock_doc = MagicMock()
@@ -669,64 +738,76 @@ class TestRedactPdf:
 class TestMain:
     """Test the main CLI function."""
 
-    @patch("pdf_redactor.PDFRedactor")
+    @patch("pdf_toolkit.cli.redactor_cli.PDFRedactor")
     def test_main_basic(self, mock_redactor_class):
         """Test basic main function execution."""
+        from pdf_toolkit.cli.redactor_cli import main as cli_main
+
         mock_redactor = MagicMock()
         mock_redactor_class.return_value = mock_redactor
 
         with patch("sys.argv", ["pdf_redactor.py", "test.pdf"]):
-            main()
+            cli_main()
 
         mock_redactor.redact_pdf.assert_called_once()
         mock_redactor.save_mappings.assert_called_once()
 
-    @patch("pdf_redactor.PDFRedactor")
+    @patch("pdf_toolkit.cli.redactor_cli.PDFRedactor")
     def test_main_with_output(self, mock_redactor_class):
         """Test main with custom output path."""
+        from pdf_toolkit.cli.redactor_cli import main as cli_main
+
         mock_redactor = MagicMock()
         mock_redactor_class.return_value = mock_redactor
 
         with patch("sys.argv", ["pdf_redactor.py", "input.pdf", "-o", "custom_output.pdf"]):
-            main()
+            cli_main()
 
         call_args = mock_redactor.redact_pdf.call_args[0]
         assert call_args[0] == "input.pdf"
         assert call_args[1] == "custom_output.pdf"
 
-    @patch("pdf_redactor.PDFRedactor")
+    @patch("pdf_toolkit.cli.redactor_cli.PDFRedactor")
     def test_main_with_mapping_output(self, mock_redactor_class):
         """Test main with custom mapping output path."""
         mock_redactor = MagicMock()
         mock_redactor_class.return_value = mock_redactor
 
-        with patch("sys.argv", ["pdf_redactor.py", "input.pdf", "--mapping-output", "custom_mappings.json"]):
-            main()
+        from pdf_toolkit.cli.redactor_cli import main as cli_main
+
+        with patch(
+            "sys.argv", ["pdf_redactor.py", "input.pdf", "--mapping-output", "custom_mappings.json"]
+        ):
+            cli_main()
 
         mock_redactor.save_mappings.assert_called_once_with("custom_mappings.json")
 
-    @patch("pdf_redactor.PDFRedactor")
+    @patch("pdf_toolkit.cli.redactor_cli.PDFRedactor")
     def test_main_default_output_paths(self, mock_redactor_class):
         """Test that default output paths are generated correctly."""
+        from pdf_toolkit.cli.redactor_cli import main as cli_main
+
         mock_redactor = MagicMock()
         mock_redactor_class.return_value = mock_redactor
 
         with patch("sys.argv", ["pdf_redactor.py", "document.pdf"]):
-            main()
+            cli_main()
 
         # Default output should be redacted_document.pdf
         call_args = mock_redactor.redact_pdf.call_args[0]
         assert "redacted_document.pdf" in call_args[1]
 
-    @patch("pdf_redactor.PDFRedactor")
+    @patch("pdf_toolkit.cli.redactor_cli.PDFRedactor")
     def test_main_with_preserve_dates_flag(self, mock_redactor_class):
         """Test main with preserve-dates flag (currently unused)."""
+        from pdf_toolkit.cli.redactor_cli import main as cli_main
+
         mock_redactor = MagicMock()
         mock_redactor_class.return_value = mock_redactor
 
         # The --preserve-dates flag exists but isn't implemented
         with patch("sys.argv", ["pdf_redactor.py", "input.pdf", "--preserve-dates"]):
-            main()
+            cli_main()
 
         # Should still run without error
         mock_redactor.redact_pdf.assert_called_once()
