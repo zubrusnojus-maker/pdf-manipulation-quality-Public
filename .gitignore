@@ -1,6 +1,13 @@
 # Workspace-level gitignore
 # Ignore local virtual environment
 .venv/
+venv/
+env/
+
+# Notebook artifacts
+notebooks/data
+notebooks/cifar_net.pth
+.ipynb_checkpoints/
 
 # macOS
 .DS_Store
@@ -8,8 +15,59 @@
 # Python cache
 __pycache__/
 *.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
 
-# Editor configs
+# Pytest and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Test artifacts
+test_*.pdf
+test_*.json
+
+# Output files (generated PDFs and mappings)
+anonymized_*.pdf
+anonymized_*.json
+redacted_*.pdf
+redacted_*_mappings.json
+FINAL_*.pdf
+edited_*.pdf
+
+# Sample PDF files directory (keep repo lightweight)
+samples/
+
+# Node / JS
+node_modules/
+package-lock.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dev-debug.log
+
+# Environment variables
+.env
+
+# Editor directories and files
 .vscode/
 .idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local, sensitive
 .claude/
+
+# Task files (optional)
+# tasks.json
+# tasks/
+

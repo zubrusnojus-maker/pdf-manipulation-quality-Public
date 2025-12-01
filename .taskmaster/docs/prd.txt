@@ -1,0 +1,46 @@
+# PDF Processing & Manipulation Quality Project
+
+## Overview
+A Python-based PDF processing toolkit with ML-powered OCR, text manipulation, and data redaction capabilities.
+
+## Goals
+1. Process PDFs with high-quality OCR using TrOCR-Large model
+2. Manipulate extracted text using LLMs (summarization, rewriting)
+3. Redact sensitive data (PII) while preserving document formatting
+4. Maintain 95%+ test coverage
+
+## Current State
+- ✅ PDF Processor: Core OCR and text manipulation pipeline
+- ✅ PDF Redactor: PII detection and anonymization (7 pattern types)
+- ✅ Quick Process: Simplified one-liner PDF processing
+- ✅ Test Suite: 14 tests passing (pytest)
+
+## Remaining Work
+
+### Phase 1: Test Coverage
+- [ ] Increase pdf_redactor.py coverage from 39% to 70%+
+- [ ] Add integration tests for pdf_processor.py with mocked models
+- [ ] Add tests for quick_pdf_process.py
+- [ ] Add edge case tests (empty PDFs, corrupt files, unicode)
+
+### Phase 2: Performance
+- [ ] Implement batch processing for multiple PDFs
+- [ ] Add progress callbacks for long-running operations
+- [ ] Optimize memory usage for large documents
+
+### Phase 3: Features
+- [ ] Add support for PDF/A output format
+- [ ] Implement page-level redaction reports
+- [ ] Add configurable redaction patterns via config file
+- [ ] Support for redacting images (faces, signatures)
+
+### Phase 4: Documentation
+- [ ] Update README with usage examples
+- [ ] Add API documentation (docstrings)
+- [ ] Create example notebooks
+
+## Technical Stack
+- Python 3.12
+- PyMuPDF (fitz) for PDF manipulation
+- Transformers + PyTorch for ML models
+- pytest for testing
