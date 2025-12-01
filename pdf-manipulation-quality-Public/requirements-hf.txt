@@ -1,0 +1,5 @@
+# Requirements for Hugging Face Spaces deployment
+# Minimal dependencies for CPU-only deployment
+
+gradio>=5.0.0
+PyMuPDF>=1.24.0

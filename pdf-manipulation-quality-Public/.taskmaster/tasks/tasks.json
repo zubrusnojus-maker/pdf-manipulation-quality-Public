@@ -1,0 +1,84 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Add mocked model tests for pdf_processor.py",
+      "description": "Increase test coverage for pdf_processor.py by adding tests with mocked ML models (TrOCR, Mistral, Llama)",
+      "status": "done",
+      "priority": "high",
+      "dependencies": [],
+      "details": "Mock transformers.pipeline for OCR and text generation. Test rasterize_pdf, extract_text_from_images, manipulate_text, reinsert_text, and process_pdf methods.",
+      "testStrategy": "Use unittest.mock to patch pipeline calls. Verify correct model loading, text processing flow, and error handling."
+    },
+    {
+      "id": 2,
+      "title": "Add tests for quick_pdf_process.py",
+      "description": "Add unit tests for the simplified quick processing script with mocked dependencies",
+      "status": "done",
+      "priority": "high",
+      "dependencies": [1],
+      "details": "Mock fitz, pdf2image, and transformers. Test the quick_process function end-to-end.",
+      "testStrategy": "Patch all external dependencies. Test success path and error handling."
+    },
+    {
+      "id": 3,
+      "title": "Add tests for pdf_redactor.py page-level methods",
+      "description": "Add tests for redact_page and redact_pdf methods to increase coverage from 52% to 80%+",
+      "status": "done",
+      "priority": "high",
+      "dependencies": [],
+      "details": "Create mock PDF page objects. Test text replacement, white rectangle drawing, and placeholder insertion.",
+      "testStrategy": "Mock fitz.Page and fitz.Document. Verify redaction operations are called correctly."
+    },
+    {
+      "id": 4,
+      "title": "Add edge case tests",
+      "description": "Add tests for edge cases: empty PDFs, corrupt files, unicode text, very large documents",
+      "status": "done",
+      "priority": "medium",
+      "dependencies": [1, 2, 3],
+      "details": "Test handling of malformed inputs, empty pages, special characters, and memory limits.",
+      "testStrategy": "Create test fixtures for edge cases. Verify graceful error handling."
+    },
+    {
+      "id": 5,
+      "title": "Implement batch processing",
+      "description": "Add support for processing multiple PDFs in a single run with progress reporting",
+      "status": "pending",
+      "priority": "medium",
+      "dependencies": [1],
+      "details": "Add batch_process method to PDFProcessor. Implement progress callbacks. Handle partial failures.",
+      "testStrategy": "Test with multiple mock PDFs. Verify progress reporting and error isolation."
+    },
+    {
+      "id": 6,
+      "title": "Implement actual layout analysis",
+      "description": "Fix the placeholder layout analysis code to actually use LayoutLMv3 output",
+      "status": "done",
+      "priority": "medium",
+      "dependencies": [1],
+      "details": "Implemented using DiT (Document Image Transformer) for document classification. Maps RVL-CDIP document types to layout formatting. Adds context to prompts based on document type.",
+      "testStrategy": "Mock LayoutLMv3 pipeline. Test layout detection affects text placement."
+    },
+    {
+      "id": 7,
+      "title": "Add configurable redaction patterns",
+      "description": "Support loading custom redaction patterns from a config file",
+      "status": "pending",
+      "priority": "low",
+      "dependencies": [3],
+      "details": "Create JSON/YAML config schema for patterns. Load and compile regexes at runtime.",
+      "testStrategy": "Test loading valid/invalid configs. Verify custom patterns work correctly."
+    },
+    {
+      "id": 8,
+      "title": "Add PDF/A output format support",
+      "description": "Support generating PDF/A compliant output for archival purposes",
+      "status": "pending",
+      "priority": "low",
+      "dependencies": [5],
+      "details": "Use pikepdf or PyMuPDF to convert output to PDF/A format. Add --pdf-a CLI flag.",
+      "testStrategy": "Verify output passes PDF/A validation tools."
+    }
+  ]
+}

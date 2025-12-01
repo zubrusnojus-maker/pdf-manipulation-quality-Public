@@ -1,0 +1,15 @@
+# Workspace-level gitignore
+# Ignore local virtual environment
+.venv/
+
+# macOS
+.DS_Store
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Editor configs
+.vscode/
+.idea/
+.claude/
